@@ -19,15 +19,22 @@ fn looks_like_utf16le(bytes: &[u8]) -> bool {
     if pairs == 0 {
         return false;
     }
-    let nul_high = bytes.chunks_exact(2).filter(|c| c[1] == 0).count();
+    let nul_high = bytes
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .filter(|c| c[1] == 0)
+        .count();
     nul_high * 2 >= pairs
 }
 
 fn decode_utf16le(bytes: &[u8]) -> String {
     let body = bytes.strip_prefix(&[0xFF, 0xFE]).unwrap_or(bytes);
     let units: Vec<u16> = body
-        .chunks_exact(2)
-        .map(|c| u16::from_le_bytes([c[0], c[1]]))
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| u16::from_le_bytes(*c))
         .collect();
     String::from_utf16_lossy(&units)
 }
