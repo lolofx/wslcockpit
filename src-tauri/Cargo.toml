@@ -1,0 +1,23 @@
+[package]
+name = "wslcockpit"
+version = "0.1.0"
+edition = "2021"
+description = "Gestionnaire de distributions WSL2"
+license = "MIT"
+
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+wsl-core = { path = "../crates/wsl-core" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

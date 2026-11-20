@@ -1,0 +1,8 @@
+[package]
+name = "wsl-core"
+version = "0.1.0"
+edition = "2021"
+description = "Décodage et parseurs de la sortie de wsl.exe, sans dépendance"
+license = "MIT"
+
+[dependencies]
