@@ -9,7 +9,10 @@ pub mod parse_version;
 
 pub use decode::decode_output;
 pub use errors::{classify_failure, WslError};
-pub use exec::{list_distros, run_checked, RawOutput, WslExe, WslRunner};
+pub use exec::{
+    list_distros, run_checked, shutdown_all, start_distro, stop_distro, RawOutput, WslExe,
+    WslRunner,
+};
 pub use parse_list::{parse_list, DistroEntry, DistroState};
 pub use parse_lxss::{parse_lxss, vhdx_path, LxssEntry};
 pub use parse_version::parse_wsl_version;
