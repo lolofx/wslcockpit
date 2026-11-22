@@ -1,8 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod settings;
+
 use serde::Serialize;
 use wsl_core::{
-    list_distros, open_terminal, shutdown_all, start_distro, stop_distro, DistroEntry, DistroState, WslError, WslExe,
+    list_distros, open_terminal, shutdown_all, start_distro, stop_distro, DistroEntry, DistroState,
+    WslError, WslExe,
 };
 
 #[derive(Serialize)]
@@ -32,7 +35,7 @@ impl From<DistroEntry> for DistroDto {
 
 fn msg(e: WslError) -> String {
     match e {
-        WslError::NotInstalled => "WSL n'est pas installé ou pas activé sur ce PC.".into(),
+        WslError::NotInstalled => "WSL_ABSENT".into(),
         WslError::DistroNotFound => "Cette distribution n'existe plus.".into(),
         WslError::Other { code, message } => format!("wsl.exe a échoué (code {code}) : {message}"),
     }
@@ -67,13 +70,27 @@ async fn terminal(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn aliases() -> settings::Aliases {
+    settings::load()
+}
+
+#[tauri::command]
+fn set_alias(name: String, alias: String) -> Result<settings::Aliases, String> {
+    let a = settings::apply(settings::load(), &name, &alias);
+    settings::save(&a)?;
+    Ok(a)
+}
+
+#[tauri::command]
 async fn shutdown() -> Result<(), String> {
     shutdown_all(&WslExe).map_err(msg)
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![distros, start, stop, restart, terminal, shutdown])
+        .invoke_handler(tauri::generate_handler![
+            distros, start, stop, restart, terminal, shutdown, aliases, set_alias
+        ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
 }

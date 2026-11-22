@@ -7,7 +7,20 @@
   let distros = $state<Distro[]>([]);
   let error = $state('');
   let loaded = $state(false);
+  let aliases = $state<Record<string, string>>({});
   let busy = $state<string | null>(null);
+
+  const absent = $derived(error === 'WSL_ABSENT');
+
+  async function rename(d: Distro) {
+    const v = prompt(`Alias pour « ${d.name} » (vide = retirer). Affichage seulement, WSL n'est pas modifié.`, aliases[d.name] ?? '');
+    if (v === null) return;
+    try {
+      aliases = await invoke<Record<string, string>>('set_alias', { name: d.name, alias: v });
+    } catch (e) {
+      error = String(e);
+    }
+  }
 
   const label = (s: string) =>
     s === 'running' ? 'En marche' : s === 'stopped' ? 'Arrêtée' : s === 'installing' ? 'Installation' : s;
@@ -52,6 +65,7 @@
   }
 
   onMount(() => {
+    invoke<Record<string, string>>('aliases').then((a) => (aliases = a));
     refresh();
     const t = setInterval(() => !busy && refresh(), 3000);
     return () => clearInterval(t);
@@ -64,13 +78,18 @@
     <button onclick={shutdownAll} disabled={busy !== null}>Tout arrêter</button>
   </header>
 
-  {#if error}
+  {#if absent}
+    <div class="error">
+      <strong>WSL n'est pas installé ou pas activé.</strong><br />
+      Ouvre PowerShell en administrateur et lance <code>wsl --install</code>, puis redémarre le PC.
+    </div>
+  {:else if error}
     <div class="error">{error}</div>
   {/if}
 
   {#if !loaded}
     <p class="muted">Chargement…</p>
-  {:else if distros.length === 0 && !error}
+  {:else if distros.length === 0 && !error && !absent}
     <p class="muted">Aucune distribution installée.</p>
   {/if}
 
@@ -78,7 +97,9 @@
     <section class="card">
       <div class="title">
         <span class="dot" class:on={d.state === 'running'}></span>
-        <strong>{d.name}</strong>
+        <strong>{aliases[d.name] ?? d.name}</strong>
+        {#if aliases[d.name]}<span class="muted state">({d.name})</span>{/if}
+        <button class="link" onclick={() => rename(d)} title="Renommer (alias local)">✎</button>
         <span class="tag">WSL{d.version}</span>
         {#if d.is_default}<span class="tag">défaut</span>{/if}
         <span class="muted state">{label(d.state)}</span>
@@ -112,6 +133,7 @@
   .tag { font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 6px; background: color-mix(in srgb, CanvasText 12%, Canvas); }
   .muted { opacity: 0.65; }
   .actions { display: flex; gap: 0.4rem; }
+  .link { padding: 0 0.3rem; border: none; background: none; opacity: 0.6; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
   button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; cursor: pointer; }
