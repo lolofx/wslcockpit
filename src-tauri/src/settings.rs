@@ -4,9 +4,9 @@ use std::path::PathBuf;
 /// Alias locaux (nom réel -> alias). N'agit jamais sur WSL.
 pub type Aliases = BTreeMap<String, String>;
 
-pub fn settings_path() -> Result<PathBuf, String> {
+pub fn settings_path(file: &str) -> Result<PathBuf, String> {
     let base = std::env::var_os("APPDATA").ok_or("Dossier %APPDATA% introuvable.")?;
-    Ok(PathBuf::from(base).join("WSLCockpit").join("aliases.json"))
+    Ok(PathBuf::from(base).join("WSLCockpit").join(file))
 }
 
 pub fn parse(text: &str) -> Aliases {
@@ -24,7 +24,11 @@ pub fn apply(mut a: Aliases, name: &str, alias: &str) -> Aliases {
 }
 
 pub fn load() -> Aliases {
-    settings_path()
+    load_file("aliases.json")
+}
+
+pub fn load_file(file: &str) -> Aliases {
+    settings_path(file)
         .ok()
         .and_then(|p| std::fs::read_to_string(p).ok())
         .map(|t| parse(&t))
@@ -32,12 +36,21 @@ pub fn load() -> Aliases {
 }
 
 pub fn save(a: &Aliases) -> Result<(), String> {
-    let p = settings_path()?;
+    save_file("aliases.json", a)
+}
+
+pub fn save_file(file: &str, a: &Aliases) -> Result<(), String> {
+    let p = settings_path(file)?;
     if let Some(dir) = p.parent() {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     }
     let json = serde_json::to_string_pretty(a).map_err(|e| e.to_string())?;
     std::fs::write(p, json).map_err(|e| format!("Écriture des réglages impossible : {e}"))
+}
+
+/// Politique d'une distro : `manual` (défaut), `start` (démarrer à l'ouverture), `keepalive`.
+pub fn valid_policy(p: &str) -> bool {
+    matches!(p, "manual" | "start" | "keepalive")
 }
 
 #[cfg(test)]
@@ -50,6 +63,12 @@ mod tests {
         assert_eq!(a.get("Ubuntu").map(String::as_str), Some("Travail"));
         let a = apply(a, "Ubuntu", "   ");
         assert!(a.is_empty());
+    }
+
+    #[test]
+    fn politiques_valides() {
+        assert!(valid_policy("keepalive") && valid_policy("manual") && valid_policy("start"));
+        assert!(!valid_policy("autre"));
     }
 
     #[test]

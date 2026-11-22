@@ -86,6 +86,26 @@ pub fn shutdown_all(runner: &dyn WslRunner) -> Result<(), WslError> {
     run_checked(runner, &["--shutdown"]).map(|_| ())
 }
 
+/// Démarre une distribution sans la maintenir (elle s'arrêtera seule si inactive).
+pub fn start_once(name: &str) -> Result<(), WslError> {
+    let mut cmd = Command::new("wsl.exe");
+    cmd.args(["-d", name, "--exec", "true"]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| WslError::Other {
+            code: e.raw_os_error().unwrap_or(-1),
+            message: e.to_string(),
+        })
+}
+
 /// Démarre une distribution : lance un processus de maintien en vie sans attendre sa fin.
 pub fn start_distro(name: &str) -> Result<(), WslError> {
     let mut cmd = Command::new("wsl.exe");

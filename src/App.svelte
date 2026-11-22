@@ -8,12 +8,22 @@
   let error = $state('');
   let loaded = $state(false);
   let aliases = $state<Record<string, string>>({});
+  let policies = $state<Record<string, string>>({});
   let autostart = $state(false);
   let busy = $state<string | null>(null);
 
   async function toggleAutostart() {
     try {
       autostart = await invoke<boolean>('autostart_set', { on: !autostart });
+    } catch (e) {
+      error = String(e);
+    }
+  }
+
+  async function setPolicy(name: string, policy: string) {
+    try {
+      policies = await invoke<Record<string, string>>('set_policy', { name, policy });
+      if (policy === 'keepalive') await act('start', name);
     } catch (e) {
       error = String(e);
     }
@@ -78,6 +88,8 @@
 
   onMount(() => {
     invoke<Record<string, string>>('aliases').then((a) => (aliases = a));
+    invoke<Record<string, string>>('policies').then((p) => (policies = p));
+    invoke('apply_policies').catch(() => {});
     invoke<boolean>('autostart_get').then((v) => (autostart = v));
     refresh();
     const t = setInterval(() => !busy && refresh(), 3000);
@@ -123,6 +135,11 @@
         </div>
       </div>
       <div class="actions">
+        <select value={policies[d.name] ?? 'manual'} onchange={(e) => setPolicy(d.name, e.currentTarget.value)} title="Politique">
+          <option value="manual">Manuel</option>
+          <option value="start">Démarrer à l'ouverture</option>
+          <option value="keepalive">Garder en vie</option>
+        </select>
         {#if d.state === 'running'}
           <button onclick={() => act('terminal', d.name)} disabled={busy !== null}>Terminal</button>
           <button onclick={() => act('restart', d.name)} disabled={busy !== null}>Redémarrer</button>
