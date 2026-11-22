@@ -2,7 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
 
-  type Distro = { name: string; state: string; version: number; is_default: boolean };
+  type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
 
   let distros = $state<Distro[]>([]);
   let error = $state('');
@@ -21,6 +21,9 @@
       error = String(e);
     }
   }
+
+  const size = (b: number) =>
+    b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} Go` : `${Math.round(b / 1024 ** 2)} Mo`;
 
   const label = (s: string) =>
     s === 'running' ? 'En marche' : s === 'stopped' ? 'Arrêtée' : s === 'installing' ? 'Installation' : s;
@@ -103,6 +106,7 @@
         <span class="tag">WSL{d.version}</span>
         {#if d.is_default}<span class="tag">défaut</span>{/if}
         <span class="muted state">{label(d.state)}</span>
+        {#if d.vhdx_bytes !== null}<span class="muted state">· VHDX {size(d.vhdx_bytes)}</span>{/if}
       </div>
       <div class="actions">
         {#if d.state === 'running'}

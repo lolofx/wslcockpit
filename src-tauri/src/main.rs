@@ -4,8 +4,8 @@ mod settings;
 
 use serde::Serialize;
 use wsl_core::{
-    list_distros, open_terminal, shutdown_all, start_distro, stop_distro, DistroEntry, DistroState,
-    WslError, WslExe,
+    list_distros, open_terminal, parse_lxss, read_lxss, shutdown_all, start_distro, stop_distro,
+    vhdx_path, DistroEntry, DistroState, WslError, WslExe,
 };
 
 #[derive(Serialize)]
@@ -14,6 +14,7 @@ struct DistroDto {
     state: String,
     version: u8,
     is_default: bool,
+    vhdx_bytes: Option<u64>,
 }
 
 impl From<DistroEntry> for DistroDto {
@@ -29,6 +30,7 @@ impl From<DistroEntry> for DistroDto {
             state,
             version: d.version,
             is_default: d.is_default,
+            vhdx_bytes: None,
         }
     }
 }
@@ -43,8 +45,23 @@ fn msg(e: WslError) -> String {
 
 #[tauri::command]
 async fn distros() -> Result<Vec<DistroDto>, String> {
+    let sizes: std::collections::HashMap<String, u64> = parse_lxss(&read_lxss())
+        .into_iter()
+        .filter_map(|e| {
+            let size = std::fs::metadata(vhdx_path(&e.base_path?)).ok()?.len();
+            Some((e.name?, size))
+        })
+        .collect();
     list_distros(&WslExe)
-        .map(|v| v.into_iter().map(DistroDto::from).collect())
+        .map(|v| {
+            v.into_iter()
+                .map(|d| {
+                    let mut dto = DistroDto::from(d);
+                    dto.vhdx_bytes = sizes.get(&dto.name).copied();
+                    dto
+                })
+                .collect()
+        })
         .map_err(msg)
 }
 
