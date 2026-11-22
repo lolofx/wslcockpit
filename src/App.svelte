@@ -9,6 +9,8 @@
   let loaded = $state(false);
   let aliases = $state<Record<string, string>>({});
   let policies = $state<Record<string, string>>({});
+  type Mon = { ram_bytes: number; cpu_percent: number | null; disks: Record<string, [number, number]> };
+  let mon = $state<Mon | null>(null);
   let autostart = $state(false);
   let busy = $state<string | null>(null);
 
@@ -17,6 +19,15 @@
       autostart = await invoke<boolean>('autostart_set', { on: !autostart });
     } catch (e) {
       error = String(e);
+    }
+  }
+
+  async function pollMonitor() {
+    if (document.hidden) return;
+    try {
+      mon = await invoke<Mon | null>('monitor');
+    } catch {
+      mon = null;
     }
   }
 
@@ -92,8 +103,13 @@
     invoke('apply_policies').catch(() => {});
     invoke<boolean>('autostart_get').then((v) => (autostart = v));
     refresh();
+    pollMonitor();
     const t = setInterval(() => !busy && refresh(), 3000);
-    return () => clearInterval(t);
+    const m = setInterval(pollMonitor, 5000);
+    return () => {
+      clearInterval(t);
+      clearInterval(m);
+    };
   });
 </script>
 
@@ -103,6 +119,12 @@
     <label class="auto"><input type="checkbox" checked={autostart} onchange={toggleAutostart} /> Démarrer avec Windows</label>
     <button onclick={shutdownAll} disabled={busy !== null}>Tout arrêter</button>
   </header>
+
+  {#if mon}
+    <div class="mon muted">
+      RAM {size(mon.ram_bytes)}{#if mon.cpu_percent !== null} · CPU {mon.cpu_percent.toFixed(0)} %{/if}
+    </div>
+  {/if}
 
   {#if absent}
     <div class="error">
@@ -131,7 +153,7 @@
           {#if d.is_default}<span class="tag">défaut</span>{/if}
         </div>
         <div class="muted state meta">
-          {label(d.state)}{#if d.vhdx_bytes !== null} · VHDX {size(d.vhdx_bytes)}{/if}
+          {label(d.state)}{#if mon?.disks[d.name]} · Disque {size(mon.disks[d.name][0])} / {size(mon.disks[d.name][1])}{/if}{#if d.vhdx_bytes !== null} · VHDX {size(d.vhdx_bytes)}{/if}
         </div>
       </div>
       <div class="actions">
@@ -173,6 +195,7 @@
   .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .tag { white-space: nowrap; }
   .auto { font-size: 0.85rem; margin-left: auto; margin-right: 1rem; }
+  .mon { margin-bottom: 0.8rem; font-size: 0.9rem; }
   .link { padding: 0 0.3rem; border: none; background: none; opacity: 0.6; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
