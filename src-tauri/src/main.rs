@@ -5,9 +5,14 @@ mod settings;
 mod tray;
 
 use serde::Serialize;
+use std::collections::HashMap;
+use std::sync::Mutex;
+use std::time::Instant;
+use tauri::{Manager, State};
 use wsl_core::{
-    list_distros, open_terminal, parse_lxss, read_lxss, shutdown_all, start_distro, start_once,
-    stop_distro, vhdx_path, DistroEntry, DistroState, WslError, WslExe,
+    cpu_percent, list_distros, open_terminal, parse_df, parse_lxss, parse_vm_sample, powershell,
+    read_lxss, run_checked, shutdown_all, start_distro, start_once, stop_distro, vhdx_path,
+    DistroEntry, DistroState, WslError, WslExe, VM_SCRIPT,
 };
 
 #[derive(Serialize)]
@@ -135,6 +140,65 @@ async fn apply_policies() -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Serialize)]
+struct Monitor {
+    ram_bytes: u64,
+    cpu_percent: Option<f64>,
+    /// nom -> (utilisé, total) en octets, distros démarrées seulement
+    disks: HashMap<String, (u64, u64)>,
+}
+
+#[derive(Default)]
+struct CpuState(Mutex<Option<(Instant, f64)>>);
+
+/// Chiffres de la VM. Renvoie `None` si la fenêtre n'est pas visible (RM08) ou si WSL est arrêté.
+#[tauri::command]
+async fn monitor(
+    app: tauri::AppHandle,
+    cpu: State<'_, CpuState>,
+) -> Result<Option<Monitor>, String> {
+    let visible = app
+        .get_webview_window("main")
+        .map(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false))
+        .unwrap_or(false);
+    if !visible {
+        return Ok(None);
+    }
+    let list = list_distros(&WslExe).map_err(msg)?;
+    let running: Vec<_> = list
+        .iter()
+        .filter(|d| d.state == DistroState::Running)
+        .collect();
+    if running.is_empty() {
+        *cpu.0.lock().unwrap() = None;
+        return Ok(None);
+    }
+    let Some(sample) = parse_vm_sample(&powershell(VM_SCRIPT)) else {
+        return Ok(None);
+    };
+    let now = Instant::now();
+    let percent = {
+        let mut prev = cpu.0.lock().unwrap();
+        let p =
+            prev.and_then(|(t, c)| cpu_percent(c, &sample, now.duration_since(t).as_secs_f64()));
+        *prev = Some((now, sample.cpu_secs));
+        p
+    };
+    let mut disks = HashMap::new();
+    for d in running {
+        if let Ok(out) = run_checked(&WslExe, &["-d", &d.name, "--exec", "df", "-k", "/"]) {
+            if let Some(v) = parse_df(&out) {
+                disks.insert(d.name.clone(), v);
+            }
+        }
+    }
+    Ok(Some(Monitor {
+        ram_bytes: sample.ram_bytes,
+        cpu_percent: percent,
+        disks,
+    }))
+}
+
 #[tauri::command]
 fn autostart_get() -> bool {
     autostart::is_enabled()
@@ -153,6 +217,7 @@ async fn shutdown() -> Result<(), String> {
 
 fn main() {
     tauri::Builder::default()
+        .manage(CpuState::default())
         .setup(|app| tray::setup(app).map_err(Into::into))
         .invoke_handler(tauri::generate_handler![
             distros,
@@ -167,7 +232,8 @@ fn main() {
             autostart_set,
             policies,
             set_policy,
-            apply_policies
+            apply_policies,
+            monitor
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");

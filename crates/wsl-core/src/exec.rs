@@ -76,6 +76,20 @@ pub fn read_lxss() -> String {
         .unwrap_or_default()
 }
 
+/// Exécute un script PowerShell sans fenêtre et renvoie sa sortie (vide en cas d'échec).
+pub fn powershell(script: &str) -> String {
+    let mut cmd = Command::new("powershell.exe");
+    cmd.args(["-NoProfile", "-NonInteractive", "-Command", script]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        .unwrap_or_default()
+}
+
 /// Arrête une distribution (`wsl -t`).
 pub fn stop_distro(runner: &dyn WslRunner, name: &str) -> Result<(), WslError> {
     run_checked(runner, &["-t", name]).map(|_| ())
