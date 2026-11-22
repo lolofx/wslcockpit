@@ -91,6 +91,30 @@ pub fn start_distro(name: &str) -> Result<(), WslError> {
         })
 }
 
+/// Ouvre un terminal sur la distribution : Windows Terminal, sinon une console classique.
+pub fn open_terminal(name: &str) -> Result<(), WslError> {
+    let other = |e: std::io::Error| WslError::Other {
+        code: e.raw_os_error().unwrap_or(-1),
+        message: e.to_string(),
+    };
+    let mut wt = Command::new("wt.exe");
+    wt.args(["wsl.exe", "-d", name]);
+    match wt.spawn() {
+        Ok(_) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            let mut cmd = Command::new("wsl.exe");
+            cmd.args(["-d", name]);
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x0000_0010); // CREATE_NEW_CONSOLE
+            }
+            cmd.spawn().map(|_| ()).map_err(other)
+        }
+        Err(e) => Err(other(e)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

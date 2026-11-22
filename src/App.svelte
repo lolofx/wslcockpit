@@ -23,11 +23,11 @@
     }
   }
 
-  async function act(cmd: 'start' | 'stop', name: string) {
+  async function act(cmd: 'start' | 'stop' | 'restart' | 'terminal', name: string) {
     busy = name;
     try {
       await invoke(cmd, { name });
-      if (cmd === 'start') await new Promise((r) => setTimeout(r, 1500));
+      if (cmd === 'start' || cmd === 'restart') await new Promise((r) => setTimeout(r, 1500));
       error = '';
     } catch (e) {
       error = String(e);
@@ -85,8 +85,11 @@
       </div>
       <div class="actions">
         {#if d.state === 'running'}
+          <button onclick={() => act('terminal', d.name)} disabled={busy !== null}>Terminal</button>
+          <button onclick={() => act('restart', d.name)} disabled={busy !== null}>Redémarrer</button>
           <button onclick={() => act('stop', d.name)} disabled={busy !== null}>Arrêter</button>
         {:else}
+          <button onclick={() => act('terminal', d.name)} disabled={busy !== null}>Terminal</button>
           <button onclick={() => act('start', d.name)} disabled={busy !== null}>Démarrer</button>
         {/if}
       </div>
@@ -108,6 +111,7 @@
   .dot.on { background: #2ea043; }
   .tag { font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 6px; background: color-mix(in srgb, CanvasText 12%, Canvas); }
   .muted { opacity: 0.65; }
+  .actions { display: flex; gap: 0.4rem; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
   button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; cursor: pointer; }

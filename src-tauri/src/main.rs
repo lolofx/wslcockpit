@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use wsl_core::{
-    list_distros, shutdown_all, start_distro, stop_distro, DistroEntry, DistroState, WslError, WslExe,
+    list_distros, open_terminal, shutdown_all, start_distro, stop_distro, DistroEntry, DistroState, WslError, WslExe,
 };
 
 #[derive(Serialize)]
@@ -56,13 +56,24 @@ async fn stop(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn restart(name: String) -> Result<(), String> {
+    stop_distro(&WslExe, &name).map_err(msg)?;
+    start_distro(&name).map_err(msg)
+}
+
+#[tauri::command]
+async fn terminal(name: String) -> Result<(), String> {
+    open_terminal(&name).map_err(msg)
+}
+
+#[tauri::command]
 async fn shutdown() -> Result<(), String> {
     shutdown_all(&WslExe).map_err(msg)
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![distros, start, stop, shutdown])
+        .invoke_handler(tauri::generate_handler![distros, start, stop, restart, terminal, shutdown])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
 }
