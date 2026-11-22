@@ -20,16 +20,20 @@ pub struct WslExe;
 
 impl WslRunner for WslExe {
     fn run(&self, args: &[&str]) -> Result<RawOutput, WslError> {
-        let out = Command::new("wsl.exe")
-            .args(args)
-            .output()
-            .map_err(|e| match e.kind() {
-                std::io::ErrorKind::NotFound => WslError::NotInstalled,
-                _ => WslError::Other {
-                    code: e.raw_os_error().unwrap_or(-1),
-                    message: e.to_string(),
-                },
-            })?;
+        let mut cmd = Command::new("wsl.exe");
+        cmd.args(args);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        }
+        let out = cmd.output().map_err(|e| match e.kind() {
+            std::io::ErrorKind::NotFound => WslError::NotInstalled,
+            _ => WslError::Other {
+                code: e.raw_os_error().unwrap_or(-1),
+                message: e.to_string(),
+            },
+        })?;
         Ok(RawOutput {
             code: out.status.code().unwrap_or(-1),
             stdout: out.stdout,
@@ -52,6 +56,39 @@ pub fn run_checked(runner: &dyn WslRunner, args: &[&str]) -> Result<String, WslE
 
 pub fn list_distros(runner: &dyn WslRunner) -> Result<Vec<DistroEntry>, WslError> {
     run_checked(runner, &["-l", "-v"]).map(|t| parse_list(&t))
+}
+
+/// Arrête une distribution (`wsl -t`).
+pub fn stop_distro(runner: &dyn WslRunner, name: &str) -> Result<(), WslError> {
+    run_checked(runner, &["-t", name]).map(|_| ())
+}
+
+/// Arrête toutes les distributions et la VM (`wsl --shutdown`).
+pub fn shutdown_all(runner: &dyn WslRunner) -> Result<(), WslError> {
+    run_checked(runner, &["--shutdown"]).map(|_| ())
+}
+
+/// Démarre une distribution : lance un processus de maintien en vie sans attendre sa fin.
+pub fn start_distro(name: &str) -> Result<(), WslError> {
+    let mut cmd = Command::new("wsl.exe");
+    cmd.args(["-d", name, "--exec", "sleep", "infinity"]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| match e.kind() {
+            std::io::ErrorKind::NotFound => WslError::NotInstalled,
+            _ => WslError::Other {
+                code: e.raw_os_error().unwrap_or(-1),
+                message: e.to_string(),
+            },
+        })
 }
 
 #[cfg(test)]
@@ -99,5 +136,26 @@ mod tests {
             stderr: vec![],
         });
         assert_eq!(list_distros(&f), Err(WslError::DistroNotFound));
+    }
+
+    #[test]
+    fn stop_passe_le_nom_en_argument_separe() {
+        use std::cell::RefCell;
+        struct Rec(RefCell<Vec<String>>);
+        impl WslRunner for Rec {
+            fn run(&self, args: &[&str]) -> Result<RawOutput, WslError> {
+                *self.0.borrow_mut() = args.iter().map(|a| a.to_string()).collect();
+                Ok(RawOutput {
+                    code: 0,
+                    stdout: vec![],
+                    stderr: vec![],
+                })
+            }
+        }
+        let r = Rec(RefCell::new(vec![]));
+        stop_distro(&r, "Ubuntu-24.04").unwrap();
+        assert_eq!(*r.0.borrow(), vec!["-t", "Ubuntu-24.04"]);
+        shutdown_all(&r).unwrap();
+        assert_eq!(*r.0.borrow(), vec!["--shutdown"]);
     }
 }
