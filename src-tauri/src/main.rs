@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod autostart;
 mod settings;
+mod tray;
 
 use serde::Serialize;
 use wsl_core::{
@@ -99,14 +101,35 @@ fn set_alias(name: String, alias: String) -> Result<settings::Aliases, String> {
 }
 
 #[tauri::command]
+fn autostart_get() -> bool {
+    autostart::is_enabled()
+}
+
+#[tauri::command]
+fn autostart_set(on: bool) -> Result<bool, String> {
+    autostart::set_enabled(on)?;
+    Ok(autostart::is_enabled())
+}
+
+#[tauri::command]
 async fn shutdown() -> Result<(), String> {
     shutdown_all(&WslExe).map_err(msg)
 }
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| tray::setup(app).map_err(Into::into))
         .invoke_handler(tauri::generate_handler![
-            distros, start, stop, restart, terminal, shutdown, aliases, set_alias
+            distros,
+            start,
+            stop,
+            restart,
+            terminal,
+            shutdown,
+            aliases,
+            set_alias,
+            autostart_get,
+            autostart_set
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");

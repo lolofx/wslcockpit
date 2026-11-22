@@ -8,7 +8,16 @@
   let error = $state('');
   let loaded = $state(false);
   let aliases = $state<Record<string, string>>({});
+  let autostart = $state(false);
   let busy = $state<string | null>(null);
+
+  async function toggleAutostart() {
+    try {
+      autostart = await invoke<boolean>('autostart_set', { on: !autostart });
+    } catch (e) {
+      error = String(e);
+    }
+  }
 
   const absent = $derived(error === 'WSL_ABSENT');
 
@@ -69,6 +78,7 @@
 
   onMount(() => {
     invoke<Record<string, string>>('aliases').then((a) => (aliases = a));
+    invoke<boolean>('autostart_get').then((v) => (autostart = v));
     refresh();
     const t = setInterval(() => !busy && refresh(), 3000);
     return () => clearInterval(t);
@@ -78,6 +88,7 @@
 <main>
   <header>
     <h1>WSLCockpit</h1>
+    <label class="auto"><input type="checkbox" checked={autostart} onchange={toggleAutostart} /> Démarrer avec Windows</label>
     <button onclick={shutdownAll} disabled={busy !== null}>Tout arrêter</button>
   </header>
 
@@ -144,6 +155,7 @@
   .muted { opacity: 0.65; }
   .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .tag { white-space: nowrap; }
+  .auto { font-size: 0.85rem; margin-left: auto; margin-right: 1rem; }
   .link { padding: 0 0.3rem; border: none; background: none; opacity: 0.6; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
