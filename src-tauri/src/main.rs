@@ -6,8 +6,8 @@ mod tray;
 
 use serde::Serialize;
 use wsl_core::{
-    list_distros, open_terminal, parse_lxss, read_lxss, shutdown_all, start_distro, stop_distro,
-    vhdx_path, DistroEntry, DistroState, WslError, WslExe,
+    list_distros, open_terminal, parse_lxss, read_lxss, shutdown_all, start_distro, start_once,
+    stop_distro, vhdx_path, DistroEntry, DistroState, WslError, WslExe,
 };
 
 #[derive(Serialize)]
@@ -101,6 +101,41 @@ fn set_alias(name: String, alias: String) -> Result<settings::Aliases, String> {
 }
 
 #[tauri::command]
+fn policies() -> settings::Aliases {
+    settings::load_file("policies.json")
+}
+
+#[tauri::command]
+fn set_policy(name: String, policy: String) -> Result<settings::Aliases, String> {
+    if !settings::valid_policy(&policy) {
+        return Err("Politique inconnue.".into());
+    }
+    let mut p = settings::load_file("policies.json");
+    if policy == "manual" {
+        p.remove(&name);
+    } else {
+        p.insert(name, policy);
+    }
+    settings::save_file("policies.json", &p)?;
+    Ok(p)
+}
+
+/// À l'ouverture : démarre les distros arrêtées dont la politique l'exige.
+#[tauri::command]
+async fn apply_policies() -> Result<(), String> {
+    let p = settings::load_file("policies.json");
+    let list = list_distros(&WslExe).map_err(msg)?;
+    for d in list.iter().filter(|d| d.state != DistroState::Running) {
+        match p.get(&d.name).map(String::as_str) {
+            Some("keepalive") => start_distro(&d.name).map_err(msg)?,
+            Some("start") => start_once(&d.name).map_err(msg)?,
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn autostart_get() -> bool {
     autostart::is_enabled()
 }
@@ -129,7 +164,10 @@ fn main() {
             aliases,
             set_alias,
             autostart_get,
-            autostart_set
+            autostart_set,
+            policies,
+            set_policy,
+            apply_policies
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
