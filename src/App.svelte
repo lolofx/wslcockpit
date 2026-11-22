@@ -11,6 +11,7 @@
   let policies = $state<Record<string, string>>({});
   type Mon = { ram_bytes: number; cpu_percent: number | null; disks: Record<string, [number, number]> };
   let mon = $state<Mon | null>(null);
+  let update = $state<{ version: string; url: string } | null>(null);
   let autostart = $state(false);
   let busy = $state<string | null>(null);
 
@@ -104,6 +105,7 @@
     invoke<boolean>('autostart_get').then((v) => (autostart = v));
     refresh();
     pollMonitor();
+    invoke<{ version: string; url: string } | null>('check_update').then((u) => (update = u)).catch(() => {});
     const t = setInterval(() => !busy && refresh(), 3000);
     const m = setInterval(pollMonitor, 5000);
     return () => {
@@ -119,6 +121,13 @@
     <label class="auto"><input type="checkbox" checked={autostart} onchange={toggleAutostart} /> Démarrer avec Windows</label>
     <button onclick={shutdownAll} disabled={busy !== null}>Tout arrêter</button>
   </header>
+
+  {#if update}
+    <div class="update">
+      Nouvelle version {update.version} disponible.
+      <button class="link" onclick={() => invoke('open_url', { url: update!.url })}>Voir la release</button>
+    </div>
+  {/if}
 
   {#if mon}
     <div class="mon muted">
@@ -196,6 +205,8 @@
   .tag { white-space: nowrap; }
   .auto { font-size: 0.85rem; margin-left: auto; margin-right: 1rem; }
   .mon { margin-bottom: 0.8rem; font-size: 0.9rem; }
+  .update { padding: 0.5rem 0.9rem; margin-bottom: 0.8rem; border-radius: 8px; background: #1f6feb33; border: 1px solid #1f6feb; font-size: 0.9rem; }
+  .update .link { opacity: 1; text-decoration: underline; cursor: pointer; }
   .link { padding: 0 0.3rem; border: none; background: none; opacity: 0.6; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }

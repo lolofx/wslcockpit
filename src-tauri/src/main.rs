@@ -10,9 +10,9 @@ use std::sync::Mutex;
 use std::time::Instant;
 use tauri::{Manager, State};
 use wsl_core::{
-    cpu_percent, list_distros, open_terminal, parse_df, parse_lxss, parse_vm_sample, powershell,
-    read_lxss, run_checked, shutdown_all, start_distro, start_once, stop_distro, vhdx_path,
-    DistroEntry, DistroState, WslError, WslExe, VM_SCRIPT,
+    cpu_percent, is_newer, list_distros, open_terminal, parse_df, parse_lxss, parse_vm_sample,
+    powershell, read_lxss, run_checked, shutdown_all, start_distro, start_once, stop_distro,
+    vhdx_path, DistroEntry, DistroState, WslError, WslExe, VM_SCRIPT,
 };
 
 #[derive(Serialize)]
@@ -199,6 +199,43 @@ async fn monitor(
     }))
 }
 
+#[derive(Serialize)]
+struct Update {
+    version: String,
+    url: String,
+}
+
+/// Dernière release GitHub si elle est plus récente ; `None` sans bruit si hors ligne ou aucune release.
+#[tauri::command]
+async fn check_update() -> Option<Update> {
+    let out = powershell(
+        "try { $r = Invoke-RestMethod -UseBasicParsing -TimeoutSec 5 \
+         -Uri 'https://api.github.com/repos/lolofx/wslcockpit/releases/latest' \
+         -Headers @{'User-Agent'='WSLCockpit'}; \
+         \"$($r.tag_name) $($r.html_url)\" } catch {}",
+    );
+    let mut it = out.split_whitespace();
+    let (tag, url) = (it.next()?, it.next()?);
+    (url.starts_with("https://github.com/lolofx/wslcockpit/")
+        && is_newer(tag, env!("CARGO_PKG_VERSION")))
+    .then(|| Update {
+        version: tag.to_string(),
+        url: url.to_string(),
+    })
+}
+
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    if !url.starts_with("https://github.com/lolofx/wslcockpit/") {
+        return Err("Lien refusé.".into());
+    }
+    std::process::Command::new("rundll32.exe")
+        .args(["url.dll,FileProtocolHandler", &url])
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn autostart_get() -> bool {
     autostart::is_enabled()
@@ -233,7 +270,9 @@ fn main() {
             policies,
             set_policy,
             apply_policies,
-            monitor
+            monitor,
+            check_update,
+            open_url
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
