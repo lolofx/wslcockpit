@@ -58,6 +58,24 @@ pub fn list_distros(runner: &dyn WslRunner) -> Result<Vec<DistroEntry>, WslError
     run_checked(runner, &["-l", "-v"]).map(|t| parse_list(&t))
 }
 
+/// Sortie brute de `reg query` sur la clé Lxss (vide si la clé n'existe pas).
+pub fn read_lxss() -> String {
+    let mut cmd = Command::new("reg.exe");
+    cmd.args([
+        "query",
+        r"HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss",
+        "/s",
+    ]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        .unwrap_or_default()
+}
+
 /// Arrête une distribution (`wsl -t`).
 pub fn stop_distro(runner: &dyn WslRunner, name: &str) -> Result<(), WslError> {
     run_checked(runner, &["-t", name]).map(|_| ())

@@ -2,7 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
 
-  type Distro = { name: string; state: string; version: number; is_default: boolean };
+  type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
 
   let distros = $state<Distro[]>([]);
   let error = $state('');
@@ -21,6 +21,9 @@
       error = String(e);
     }
   }
+
+  const size = (b: number) =>
+    b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} Go` : `${Math.round(b / 1024 ** 2)} Mo`;
 
   const label = (s: string) =>
     s === 'running' ? 'En marche' : s === 'stopped' ? 'Arrêtée' : s === 'installing' ? 'Installation' : s;
@@ -95,14 +98,18 @@
 
   {#each distros as d (d.name)}
     <section class="card">
-      <div class="title">
-        <span class="dot" class:on={d.state === 'running'}></span>
-        <strong>{aliases[d.name] ?? d.name}</strong>
-        {#if aliases[d.name]}<span class="muted state">({d.name})</span>{/if}
-        <button class="link" onclick={() => rename(d)} title="Renommer (alias local)">✎</button>
-        <span class="tag">WSL{d.version}</span>
-        {#if d.is_default}<span class="tag">défaut</span>{/if}
-        <span class="muted state">{label(d.state)}</span>
+      <div class="info">
+        <div class="title">
+          <span class="dot" class:on={d.state === 'running'}></span>
+          <strong>{aliases[d.name] ?? d.name}</strong>
+          {#if aliases[d.name]}<span class="muted state">({d.name})</span>{/if}
+          <button class="link" onclick={() => rename(d)} title="Renommer (alias local)">✎</button>
+          <span class="tag">WSL{d.version}</span>
+          {#if d.is_default}<span class="tag">défaut</span>{/if}
+        </div>
+        <div class="muted state meta">
+          {label(d.state)}{#if d.vhdx_bytes !== null} · VHDX {size(d.vhdx_bytes)}{/if}
+        </div>
       </div>
       <div class="actions">
         {#if d.state === 'running'}
@@ -123,16 +130,20 @@
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
   h1 { font-size: 1.4rem; margin: 0; }
   .card {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem;
     padding: 0.9rem 1rem; margin-bottom: 0.6rem; border-radius: 10px;
     background: color-mix(in srgb, CanvasText 6%, Canvas); border: 1px solid color-mix(in srgb, CanvasText 14%, Canvas);
   }
-  .title { display: flex; align-items: center; gap: 0.6rem; }
+  .info { flex: 1 1 260px; min-width: 0; }
+  .title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
+  .meta { margin: 0.25rem 0 0 1.1rem; white-space: nowrap; }
+  strong { overflow-wrap: anywhere; }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: #888; }
   .dot.on { background: #2ea043; }
   .tag { font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 6px; background: color-mix(in srgb, CanvasText 12%, Canvas); }
   .muted { opacity: 0.65; }
-  .actions { display: flex; gap: 0.4rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tag { white-space: nowrap; }
   .link { padding: 0 0.3rem; border: none; background: none; opacity: 0.6; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
