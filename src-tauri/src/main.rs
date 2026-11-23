@@ -10,10 +10,11 @@ use std::sync::Mutex;
 use std::time::Instant;
 use tauri::{Manager, State};
 use wsl_core::{
-    cpu_percent, is_newer, list_distros, now_timestamp, open_terminal, parse_df, parse_lxss,
-    parse_vm_sample, powershell, read_lxss, read_wslconf, run_checked, shutdown_all, start_distro,
-    start_once, stop_distro, vhdx_path, write_with_backup, write_wslconf, wslconf_needs_start,
-    DistroEntry, DistroState, WslError, WslExe, VM_SCRIPT,
+    apply_values, cpu_percent, is_newer, list_distros, now_timestamp, open_terminal, parse_df,
+    parse_lxss, parse_vm_sample, powershell, read_lxss, read_values, read_wslconf, run_checked,
+    shutdown_all, start_distro, start_once, stop_distro, vhdx_path, write_with_backup,
+    write_wslconf, wslconf_needs_start, DistroEntry, DistroState, WslError, WslExe, DISTRO_FIELDS,
+    GLOBAL_FIELDS, VM_SCRIPT,
 };
 
 #[derive(Serialize)]
@@ -301,6 +302,50 @@ async fn write_distro_conf(distro: String, text: String, allow_start: bool) -> R
     write_wslconf(&distro, &text, &now_timestamp()).map_err(msg)
 }
 
+#[derive(Serialize)]
+struct ConfigView {
+    values: Vec<(String, String)>,
+}
+
+/// Valeurs du `.wslconfig` (distro = None) ou du `wsl.conf` d'une distro.
+#[tauri::command]
+async fn config_load(distro: Option<String>, allow_start: bool) -> Result<ConfigView, String> {
+    let (text, fields) = match &distro {
+        None => (read_wslconfig()?, &GLOBAL_FIELDS[..]),
+        Some(d) => {
+            guard_start(d, allow_start)?;
+            (read_wslconf(&WslExe, d).map_err(msg)?, &DISTRO_FIELDS[..])
+        }
+    };
+    Ok(ConfigView {
+        values: read_values(&text, fields),
+    })
+}
+
+/// Valide puis enregistre. Erreur de validation : JSON `[[id, message], ...]` préfixé `INVALID:`.
+#[tauri::command]
+async fn config_save(
+    distro: Option<String>,
+    values: Vec<(String, String)>,
+    allow_start: bool,
+) -> Result<(), String> {
+    let invalid = |e: Vec<(String, String)>| {
+        format!("INVALID:{}", serde_json::to_string(&e).unwrap_or_default())
+    };
+    match distro {
+        None => {
+            let new = apply_values(&read_wslconfig()?, &GLOBAL_FIELDS, &values).map_err(invalid)?;
+            write_wslconfig(new).map(|_| ())
+        }
+        Some(d) => {
+            guard_start(&d, allow_start)?;
+            let old = read_wslconf(&WslExe, &d).map_err(msg)?;
+            let new = apply_values(&old, &DISTRO_FIELDS, &values).map_err(invalid)?;
+            write_wslconf(&d, &new, &now_timestamp()).map_err(msg)
+        }
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(CpuState::default())
@@ -325,7 +370,9 @@ fn main() {
             read_wslconfig,
             write_wslconfig,
             read_distro_conf,
-            write_distro_conf
+            write_distro_conf,
+            config_load,
+            config_save
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
