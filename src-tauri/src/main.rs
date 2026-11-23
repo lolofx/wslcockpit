@@ -10,9 +10,10 @@ use std::sync::Mutex;
 use std::time::Instant;
 use tauri::{Manager, State};
 use wsl_core::{
-    cpu_percent, is_newer, list_distros, open_terminal, parse_df, parse_lxss, parse_vm_sample,
-    powershell, read_lxss, run_checked, shutdown_all, start_distro, start_once, stop_distro,
-    vhdx_path, DistroEntry, DistroState, WslError, WslExe, VM_SCRIPT,
+    cpu_percent, is_newer, list_distros, now_timestamp, open_terminal, parse_df, parse_lxss,
+    parse_vm_sample, powershell, read_lxss, read_wslconf, run_checked, shutdown_all, start_distro,
+    start_once, stop_distro, vhdx_path, write_with_backup, write_wslconf, wslconf_needs_start,
+    DistroEntry, DistroState, WslError, WslExe, VM_SCRIPT,
 };
 
 #[derive(Serialize)]
@@ -252,6 +253,54 @@ async fn shutdown() -> Result<(), String> {
     shutdown_all(&WslExe).map_err(msg)
 }
 
+fn wslconfig_path() -> Result<std::path::PathBuf, String> {
+    let home = std::env::var_os("USERPROFILE").ok_or("Dossier utilisateur introuvable.")?;
+    Ok(std::path::PathBuf::from(home).join(".wslconfig"))
+}
+
+/// Contenu de `%USERPROFILE%\.wslconfig` (vide s'il n'existe pas).
+#[tauri::command]
+fn read_wslconfig() -> Result<String, String> {
+    match std::fs::read_to_string(wslconfig_path()?) {
+        Ok(t) => Ok(t),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+        Err(e) => Err(format!("Lecture de .wslconfig impossible : {e}")),
+    }
+}
+
+/// Écrit `.wslconfig` après sauvegarde horodatée ; renvoie le chemin de la sauvegarde.
+#[tauri::command]
+fn write_wslconfig(text: String) -> Result<Option<String>, String> {
+    write_with_backup(&wslconfig_path()?, &text, &now_timestamp())
+        .map(|b| b.map(|p| p.display().to_string()))
+        .map_err(|e| format!("Écriture de .wslconfig impossible : {e}"))
+}
+
+/// Refuse de démarrer la distro sans accord : erreur `NEEDS_START`.
+fn guard_start(distro: &str, allow_start: bool) -> Result<(), String> {
+    if allow_start {
+        return Ok(());
+    }
+    let list = list_distros(&WslExe).map_err(msg)?;
+    if wslconf_needs_start(&list, distro) {
+        Err("NEEDS_START".into())
+    } else {
+        Ok(())
+    }
+}
+
+#[tauri::command]
+async fn read_distro_conf(distro: String, allow_start: bool) -> Result<String, String> {
+    guard_start(&distro, allow_start)?;
+    read_wslconf(&WslExe, &distro).map_err(msg)
+}
+
+#[tauri::command]
+async fn write_distro_conf(distro: String, text: String, allow_start: bool) -> Result<(), String> {
+    guard_start(&distro, allow_start)?;
+    write_wslconf(&distro, &text, &now_timestamp()).map_err(msg)
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(CpuState::default())
@@ -272,7 +321,11 @@ fn main() {
             apply_policies,
             monitor,
             check_update,
-            open_url
+            open_url,
+            read_wslconfig,
+            write_wslconfig,
+            read_distro_conf,
+            write_distro_conf
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
