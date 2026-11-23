@@ -95,6 +95,11 @@ pub fn stop_distro(runner: &dyn WslRunner, name: &str) -> Result<(), WslError> {
     run_checked(runner, &["-t", name]).map(|_| ())
 }
 
+/// Définit la distribution par défaut (`wsl --set-default`).
+pub fn set_default(runner: &dyn WslRunner, name: &str) -> Result<(), WslError> {
+    run_checked(runner, &["--set-default", name]).map(|_| ())
+}
+
 /// Arrête toutes les distributions et la VM (`wsl --shutdown`).
 pub fn shutdown_all(runner: &dyn WslRunner) -> Result<(), WslError> {
     run_checked(runner, &["--shutdown"]).map(|_| ())
@@ -233,5 +238,30 @@ mod tests {
         assert_eq!(*r.0.borrow(), vec!["-t", "Ubuntu-24.04"]);
         shutdown_all(&r).unwrap();
         assert_eq!(*r.0.borrow(), vec!["--shutdown"]);
+    }
+}
+
+#[cfg(test)]
+mod set_default_tests {
+    use super::*;
+    use std::cell::RefCell;
+
+    struct Rec(RefCell<Vec<String>>);
+    impl WslRunner for Rec {
+        fn run(&self, args: &[&str]) -> Result<RawOutput, WslError> {
+            *self.0.borrow_mut() = args.iter().map(|a| a.to_string()).collect();
+            Ok(RawOutput {
+                code: 0,
+                stdout: vec![],
+                stderr: vec![],
+            })
+        }
+    }
+
+    #[test]
+    fn set_default_passe_le_nom_en_argument() {
+        let r = Rec(RefCell::new(vec![]));
+        set_default(&r, "Ubuntu 22.04").unwrap();
+        assert_eq!(*r.0.borrow(), ["--set-default", "Ubuntu 22.04"]);
     }
 }
