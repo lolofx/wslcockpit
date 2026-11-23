@@ -1,5 +1,6 @@
 //! Parseurs purs de la sortie de `wsl.exe`, testables sans WSL.
 
+pub mod config_io;
 pub mod config_validate;
 pub mod decode;
 pub mod errors;
@@ -11,6 +12,10 @@ pub mod parse_lxss;
 pub mod parse_version;
 pub mod version_check;
 
+pub use config_io::{
+    backup_name, now_timestamp, read_wslconf, timestamp, write_with_backup, write_wslconf,
+    wslconf_needs_start,
+};
 pub use config_validate::{validate, Field};
 pub use decode::decode_output;
 pub use errors::{classify_failure, WslError};
