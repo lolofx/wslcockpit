@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import ConfigPanel from './lib/ConfigPanel.svelte';
 
   type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
 
@@ -14,6 +15,7 @@
   let update = $state<{ version: string; url: string } | null>(null);
   let autostart = $state(false);
   let busy = $state<string | null>(null);
+  let showConfig = $state(false);
 
   async function toggleAutostart() {
     try {
@@ -119,8 +121,13 @@
   <header>
     <h1>WSLCockpit</h1>
     <label class="auto"><input type="checkbox" checked={autostart} onchange={toggleAutostart} /> Démarrer avec Windows</label>
+    <button onclick={() => (showConfig = true)} style="margin-right: 0.5rem">Configuration</button>
     <button onclick={shutdownAll} disabled={busy !== null}>Tout arrêter</button>
   </header>
+
+  {#if showConfig}
+    <ConfigPanel distros={distros.map((d) => d.name)} onclose={() => (showConfig = false)} />
+  {:else}
 
   {#if update}
     <div class="update">
@@ -182,6 +189,7 @@
       </div>
     </section>
   {/each}
+  {/if}
 </main>
 
 <style>

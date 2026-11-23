@@ -1,5 +1,6 @@
 //! Parseurs purs de la sortie de `wsl.exe`, testables sans WSL.
 
+pub mod config_edit;
 pub mod config_io;
 pub mod config_validate;
 pub mod decode;
@@ -12,6 +13,7 @@ pub mod parse_lxss;
 pub mod parse_version;
 pub mod version_check;
 
+pub use config_edit::{apply_values, read_values, DISTRO_FIELDS, GLOBAL_FIELDS};
 pub use config_io::{
     backup_name, now_timestamp, read_wslconf, timestamp, write_with_backup, write_wslconf,
     wslconf_needs_start,
