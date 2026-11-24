@@ -2,6 +2,7 @@
   import Dialog from '../ui/Dialog.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import { open, save } from '@tauri-apps/plugin-dialog';
 
   let { mode, source, version = 2, onclose }: { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse'; source: string; version?: number; onclose: () => void } = $props();
 
@@ -46,6 +47,24 @@
     }, 1000);
     return () => clearInterval(t);
   });
+
+  async function browse(what: 'tar-open' | 'tar-save' | 'dir') {
+    try {
+      const filters = [{ name: 'Archive tar', extensions: ['tar'] }];
+      if (what === 'tar-save') {
+        const r = await save({ defaultPath: path, filters });
+        if (r) path = r;
+      } else if (what === 'tar-open') {
+        const r = await open({ multiple: false, directory: false, filters });
+        if (typeof r === 'string') tar = r;
+      } else {
+        const r = await open({ multiple: false, directory: true, defaultPath: base || undefined });
+        if (typeof r === 'string') path = r;
+      }
+    } catch (e) {
+      error = String(e);
+    }
+  }
 
   function suggestDir() {
     if (mode !== 'export' && base && (path === '' || path.startsWith(base))) path = `${base}\\${name}`;
@@ -98,11 +117,11 @@
       {/if}
       {#if mode === 'import'}
         <label>Archive à importer (.tar)
-          <input bind:value={tar} placeholder="C:\sauvegardes\ubuntu.tar" />
+          <span class="pick"><input bind:value={tar} placeholder="C:\sauvegardes\ubuntu.tar" /><button type="button" onclick={() => browse('tar-open')}>Parcourir…</button></span>
         </label>
       {/if}
       <label>{mode === 'export' ? 'Fichier d\'export (.tar)' : 'Dossier d\'installation (vide ou à créer)'}
-        <input bind:value={path} />
+        <span class="pick"><input bind:value={path} /><button type="button" onclick={() => browse(mode === 'export' ? 'tar-save' : 'dir')}>Parcourir…</button></span>
       </label>
       {#if mode === 'export'}
         <p class="muted">Un fichier existant n'est jamais écrasé. L'export peut prendre plusieurs minutes.</p>
@@ -134,6 +153,8 @@
   label { display: block; margin-bottom: 0.7rem; font-size: 0.9rem; }
   input { display: block; width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text); }
   progress { width: 100%; }
+  .pick { display: flex; gap: 0.4rem; align-items: end; }
+  .pick input { flex: 1; }
   .foot { display: flex; gap: 0.5rem; }
   .primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
   .muted { opacity: 0.65; font-size: 0.85rem; }

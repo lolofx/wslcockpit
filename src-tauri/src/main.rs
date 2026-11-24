@@ -112,6 +112,30 @@ async fn terminal(name: String) -> Result<(), String> {
     open_terminal(&name).map_err(msg)
 }
 
+/// Dispositions des espaces de travail (layouts.json) : document JSON opaque pour le Rust,
+/// validé et réparé côté front (parseLayout). Écriture atomique.
+#[tauri::command]
+fn layouts_load() -> serde_json::Value {
+    settings::settings_path("layouts.json")
+        .ok()
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or(serde_json::Value::Null)
+}
+
+#[tauri::command]
+fn layouts_save(doc: serde_json::Value) -> Result<(), String> {
+    let p = settings::settings_path("layouts.json")?;
+    if let Some(dir) = p.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let tmp = p.with_extension("json.tmp");
+    let json = serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?;
+    std::fs::write(&tmp, json)
+        .map_err(|e| format!("Écriture des dispositions impossible : {e}"))?;
+    std::fs::rename(&tmp, &p).map_err(|e| format!("Écriture des dispositions impossible : {e}"))
+}
+
 #[tauri::command]
 fn aliases() -> settings::Aliases {
     settings::load()
@@ -422,6 +446,8 @@ async fn op_sparse(st: State<'_, ops::OpState>, name: String, on: bool) -> Resul
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(CpuState::default())
         .manage(ops::OpState::default())
         .setup(|app| tray::setup(app).map_err(Into::into))
@@ -434,6 +460,8 @@ fn main() {
             restart,
             terminal,
             shutdown,
+            layouts_load,
+            layouts_save,
             aliases,
             set_alias,
             autostart_get,

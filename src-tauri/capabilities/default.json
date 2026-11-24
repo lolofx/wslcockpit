@@ -1,7 +1,15 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions de la fenêtre principale",
-  "windows": ["main"],
-  "permissions": ["core:default"]
+  "description": "Permissions de la fenêtre principale et des blocs détachés",
+  "windows": ["main", "float-*"],
+  "permissions": [
+    "core:default",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-close",
+    "core:window:allow-set-focus",
+    "core:window:allow-set-title",
+    "dialog:default",
+    "notification:default"
+  ]
 }

@@ -136,3 +136,54 @@ export function parseLayout(raw: unknown): Layout {
     return defaultLayout()
   }
 }
+
+// --- Document complet (layouts.json) : une disposition courante par distro + des dispositions nommées.
+export type LayoutsDoc = {
+  version: 1
+  distros: Record<string, Layout>
+  presets: Record<string, Layout> // dispositions nommées, applicables à toute distro
+}
+
+export const emptyDoc = (): LayoutsDoc => ({ version: 1, distros: {}, presets: {} })
+
+export function parseDoc(raw: unknown): LayoutsDoc {
+  const doc = emptyDoc()
+  try {
+    const r = raw as Partial<LayoutsDoc> | null
+    if (!r || r.version !== 1) return doc
+    for (const [k, v] of Object.entries(r.distros ?? {})) doc.distros[k] = parseLayout(v)
+    for (const [k, v] of Object.entries(r.presets ?? {})) doc.presets[k] = parseLayout(v)
+  } catch {
+    /* document illisible : repart de zéro */
+  }
+  return doc
+}
+
+// Copie d'une disposition avec de nouveaux identifiants (un preset appliqué ne partage aucun id).
+export function cloneLayout(l: Layout): Layout {
+  return {
+    version: 1,
+    stacks: l.stacks.map((s) => ({
+      ...s,
+      id: uid('s'),
+      blocks: s.blocks.map((b) => ({ ...b, id: uid('b'), props: structuredClone(b.props) })),
+    })),
+  }
+}
+
+export function savePreset(doc: LayoutsDoc, name: string, layout: Layout): LayoutsDoc {
+  const n = name.trim()
+  if (!n) return doc
+  return { ...doc, presets: { ...doc.presets, [n]: cloneLayout(layout) } }
+}
+
+export function deletePreset(doc: LayoutsDoc, name: string): LayoutsDoc {
+  const presets = { ...doc.presets }
+  delete presets[name]
+  return { ...doc, presets }
+}
+
+export function applyPreset(doc: LayoutsDoc, name: string): Layout | null {
+  const p = doc.presets[name]
+  return p ? cloneLayout(p) : null
+}
