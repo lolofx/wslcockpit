@@ -5,6 +5,8 @@
   import DeleteDialog from './lib/DeleteDialog.svelte';
   import ConfigPanel from './lib/ConfigPanel.svelte';
   import ProtoApp from './ProtoApp.svelte';
+  import FeedbackHost from './ui/FeedbackHost.svelte';
+  import { confirmAction, promptText, toast } from './ui/feedback.svelte';
 
   type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
 
@@ -52,7 +54,11 @@
   const absent = $derived(error === 'WSL_ABSENT');
 
   async function rename(d: Distro) {
-    const v = prompt(`Alias pour « ${d.name} » (vide = retirer). Affichage seulement, WSL n'est pas modifié.`, aliases[d.name] ?? '');
+    const v = await promptText({
+      title: `Alias pour « ${d.name} »`,
+      message: "Vide = retirer l'alias. Affichage seulement, WSL n'est pas modifié.",
+      value: aliases[d.name] ?? '',
+    });
     if (v === null) return;
     try {
       aliases = await invoke<Record<string, string>>('set_alias', { name: d.name, alias: v });
@@ -106,11 +112,12 @@
   async function shutdownAll() {
     const running = distros.filter((d) => d.state === 'running').map((d) => d.name);
     const list = running.length ? running.join(', ') : 'aucune distribution en marche';
-    if (!confirm(`Tout arrêter (wsl --shutdown) ?\n\nEn marche : ${list}`)) return;
+    if (!(await confirmAction({ title: 'Tout arrêter ?', message: `wsl --shutdown\n\nEn marche : ${list}`, confirmLabel: 'Tout arrêter', danger: true }))) return;
     busy = '*';
     try {
       await invoke('shutdown');
       error = '';
+      toast('Toutes les distributions sont arrêtées.', 'success');
     } catch (e) {
       error = String(e);
     }
@@ -135,6 +142,7 @@
   });
 </script>
 
+<FeedbackHost />
 {#if proto}
   <ProtoApp onexit={() => (proto = false)} />
 {:else}
@@ -238,7 +246,7 @@
   .card {
     display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem;
     padding: 0.9rem 1rem; margin-bottom: 0.6rem; border-radius: 10px;
-    background: color-mix(in srgb, CanvasText 6%, Canvas); border: 1px solid color-mix(in srgb, CanvasText 14%, Canvas);
+    background: var(--surface-1); border: 1px solid var(--border);
   }
   .info { flex: 1 1 260px; min-width: 0; }
   .title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
@@ -257,6 +265,7 @@
   .link { padding: 0 0.3rem; border: none; background: none; opacity: 0.6; }
   .state { font-size: 0.85rem; }
   .error { padding: 0.7rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
-  button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; cursor: pointer; }
+  button { font: inherit; font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-3); border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-1); color: var(--text); cursor: pointer; }
+  button:hover:not(:disabled) { background: var(--surface-2); }
   button:disabled { opacity: 0.5; cursor: default; }
 </style>

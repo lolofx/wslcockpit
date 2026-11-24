@@ -1,8 +1,9 @@
-:root {
-  color-scheme: light dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
+@import './ui/tokens.css';
 
 body {
   margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs);
+  background: var(--bg);
+  color: var(--text);
 }
