@@ -17,6 +17,35 @@ pub fn import_args(name: &str, dir: &str, tar: &str) -> Vec<String> {
         .to_vec()
 }
 
+pub fn convert_args(name: &str, version: u8) -> Vec<String> {
+    ["--set-version", name, &version.to_string()]
+        .map(String::from)
+        .to_vec()
+}
+
+pub fn sparse_args(name: &str, on: bool) -> Vec<String> {
+    [
+        "--manage",
+        name,
+        "--set-sparse",
+        if on { "true" } else { "false" },
+    ]
+    .map(String::from)
+    .to_vec()
+}
+
+/// Le mode sparse (`wsl --manage --set-sparse`) demande WSL 2.0.0 ou plus récent.
+pub fn sparse_supported(version: Option<&[u32]>) -> Result<(), String> {
+    match version {
+        Some(v) if v.first().copied().unwrap_or(0) >= 2 => Ok(()),
+        Some(v) => Err(format!(
+            "Mode sparse indisponible : WSL {} installé, 2.0.0 ou plus requis (wsl --update).",
+            v.iter().map(u32::to_string).collect::<Vec<_>>().join(".")
+        )),
+        None => Err("Mode sparse indisponible : version de WSL inconnue (wsl --update).".into()),
+    }
+}
+
 /// Nom d'une nouvelle distribution : lettres, chiffres, `_ - .`, 64 caractères max, inexistant.
 pub fn check_new_name(name: &str, existing: &[String]) -> Result<(), String> {
     let n = name.trim();
@@ -166,5 +195,24 @@ mod tests {
         assert!(check_tar_target(&base.join("a.zip")).is_err());
         assert!(check_tar_target(&base.join("nope").join("b.tar")).is_err());
         std::fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn conversion_et_sparse() {
+        assert_eq!(convert_args("U", 1), ["--set-version", "U", "1"]);
+        assert_eq!(
+            sparse_args("U", true),
+            ["--manage", "U", "--set-sparse", "true"]
+        );
+        assert_eq!(sparse_args("U", false)[3], "false");
+    }
+
+    #[test]
+    fn sparse_grise_si_wsl_ancien() {
+        assert!(sparse_supported(Some(&[2, 3, 26, 0])).is_ok());
+        assert!(sparse_supported(Some(&[2, 0, 0])).is_ok());
+        let e = sparse_supported(Some(&[1, 2, 5])).unwrap_err();
+        assert!(e.contains("1.2.5") && e.contains("2.0.0"));
+        assert!(sparse_supported(None).is_err());
     }
 }
