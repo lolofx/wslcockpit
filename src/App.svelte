@@ -2,6 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
   import OpsDialog from './lib/OpsDialog.svelte';
+  import DeleteDialog from './lib/DeleteDialog.svelte';
   import ConfigPanel from './lib/ConfigPanel.svelte';
 
   type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
@@ -17,6 +18,7 @@
   let autostart = $state(false);
   let busy = $state<string | null>(null);
   let showConfig = $state(false);
+  let deleting = $state<string | null>(null);
   let ops = $state<{ mode: 'export' | 'import' | 'clone'; source: string } | null>(null);
 
   async function toggleAutostart() {
@@ -195,6 +197,7 @@
         </select>
         <button onclick={() => (ops = { mode: 'export', source: d.name })} disabled={busy !== null}>Exporter</button>
         <button onclick={() => (ops = { mode: 'clone', source: d.name })} disabled={busy !== null}>Cloner</button>
+        <button onclick={() => (deleting = d.name)} disabled={busy !== null || d.state === 'installing'}>Supprimer</button>
         {#if d.state === 'running'}
           <button onclick={() => act('terminal', d.name)} disabled={busy !== null}>Terminal</button>
           <button onclick={() => act('restart', d.name)} disabled={busy !== null}>Redémarrer</button>
@@ -206,6 +209,13 @@
       </div>
     </section>
   {/each}
+  {/if}
+  {#if deleting}
+    <DeleteDialog
+      name={deleting}
+      onclose={() => { deleting = null; refresh(); invoke<Record<string, string>>('aliases').then((a) => (aliases = a)); }}
+      onexport={() => { ops = { mode: 'export', source: deleting! }; deleting = null; }}
+    />
   {/if}
   {#if ops}
     <OpsDialog mode={ops.mode} source={ops.source} onclose={() => { ops = null; refresh(); }} />

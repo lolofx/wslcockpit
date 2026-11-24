@@ -100,6 +100,22 @@ pub fn set_default(runner: &dyn WslRunner, name: &str) -> Result<(), WslError> {
     run_checked(runner, &["--set-default", name]).map(|_| ())
 }
 
+/// La suppression exige de retaper le nom exact de la distribution (sensible à la casse).
+pub fn check_delete_confirmation(name: &str, typed: &str) -> Result<(), String> {
+    if !name.is_empty() && name == typed {
+        Ok(())
+    } else {
+        Err("Le nom saisi ne correspond pas : suppression refusée.".into())
+    }
+}
+
+/// Supprime définitivement la distribution et son disque virtuel (`wsl --unregister`).
+pub fn unregister_distro(runner: &dyn WslRunner, name: &str, typed: &str) -> Result<(), WslError> {
+    check_delete_confirmation(name, typed)
+        .map_err(|message| WslError::Other { code: -1, message })?;
+    run_checked(runner, &["--unregister", name]).map(|_| ())
+}
+
 /// Arrête toutes les distributions et la VM (`wsl --shutdown`).
 pub fn shutdown_all(runner: &dyn WslRunner) -> Result<(), WslError> {
     run_checked(runner, &["--shutdown"]).map(|_| ())
@@ -263,5 +279,15 @@ mod set_default_tests {
         let r = Rec(RefCell::new(vec![]));
         set_default(&r, "Ubuntu 22.04").unwrap();
         assert_eq!(*r.0.borrow(), ["--set-default", "Ubuntu 22.04"]);
+    }
+
+    #[test]
+    fn suppression_refusee_si_nom_different() {
+        let r = Rec(RefCell::new(vec![]));
+        assert!(unregister_distro(&r, "Ubuntu", "ubuntu").is_err());
+        assert!(unregister_distro(&r, "Ubuntu", "").is_err());
+        assert!(r.0.borrow().is_empty(), "wsl.exe ne doit pas être lancé");
+        unregister_distro(&r, "Ubuntu", "Ubuntu").unwrap();
+        assert_eq!(*r.0.borrow(), ["--unregister", "Ubuntu"]);
     }
 }
