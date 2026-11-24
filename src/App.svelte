@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import OpsDialog from './lib/OpsDialog.svelte';
   import ConfigPanel from './lib/ConfigPanel.svelte';
 
   type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
@@ -16,6 +17,7 @@
   let autostart = $state(false);
   let busy = $state<string | null>(null);
   let showConfig = $state(false);
+  let ops = $state<{ mode: 'export' | 'import' | 'clone'; source: string } | null>(null);
 
   async function toggleAutostart() {
     try {
@@ -133,6 +135,7 @@
   <header>
     <h1>WSLCockpit</h1>
     <label class="auto"><input type="checkbox" checked={autostart} onchange={toggleAutostart} /> Démarrer avec Windows</label>
+    <button onclick={() => (ops = { mode: 'import', source: '' })} style="margin-right: 0.5rem">Importer</button>
     <button onclick={() => (showConfig = true)} style="margin-right: 0.5rem">Configuration</button>
     <button onclick={shutdownAll} disabled={busy !== null}>Tout arrêter</button>
   </header>
@@ -190,6 +193,8 @@
           <option value="start">Démarrer à l'ouverture</option>
           <option value="keepalive">Garder en vie</option>
         </select>
+        <button onclick={() => (ops = { mode: 'export', source: d.name })} disabled={busy !== null}>Exporter</button>
+        <button onclick={() => (ops = { mode: 'clone', source: d.name })} disabled={busy !== null}>Cloner</button>
         {#if d.state === 'running'}
           <button onclick={() => act('terminal', d.name)} disabled={busy !== null}>Terminal</button>
           <button onclick={() => act('restart', d.name)} disabled={busy !== null}>Redémarrer</button>
@@ -201,6 +206,9 @@
       </div>
     </section>
   {/each}
+  {/if}
+  {#if ops}
+    <OpsDialog mode={ops.mode} source={ops.source} onclose={() => { ops = null; refresh(); }} />
   {/if}
 </main>
 

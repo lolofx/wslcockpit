@@ -8,6 +8,7 @@ pub mod errors;
 pub mod exec;
 pub mod ini;
 pub mod monitor;
+pub mod ops;
 pub mod parse_list;
 pub mod parse_lxss;
 pub mod parse_version;
@@ -27,6 +28,9 @@ pub use exec::{
 };
 pub use ini::Ini;
 pub use monitor::{cpu_percent, parse_df, parse_vm_sample, VmSample, VM_SCRIPT};
+pub use ops::{
+    check_new_name, check_tar_target, check_target_dir, export_args, import_args, run_cancellable,
+};
 pub use parse_list::{parse_list, DistroEntry, DistroState};
 pub use parse_lxss::{parse_lxss, vhdx_path, LxssEntry};
 pub use parse_version::parse_wsl_version;

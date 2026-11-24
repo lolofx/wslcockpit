@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod autostart;
+mod ops;
 mod settings;
 mod tray;
 
@@ -351,9 +352,52 @@ async fn config_save(
     }
 }
 
+#[tauri::command]
+fn op_default_base() -> String {
+    std::env::var("USERPROFILE")
+        .map(|h| format!("{h}\\WSL"))
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+fn op_status(st: State<ops::OpState>) -> ops::Status {
+    st.status()
+}
+
+#[tauri::command]
+fn op_cancel(st: State<ops::OpState>) {
+    st.cancel();
+}
+
+#[tauri::command]
+async fn op_export(st: State<'_, ops::OpState>, name: String, tar: String) -> Result<(), String> {
+    ops::export(&st, name, tar)
+}
+
+#[tauri::command]
+async fn op_import(
+    st: State<'_, ops::OpState>,
+    name: String,
+    dir: String,
+    tar: String,
+) -> Result<(), String> {
+    ops::import(&st, name, dir, tar)
+}
+
+#[tauri::command]
+async fn op_clone(
+    st: State<'_, ops::OpState>,
+    source: String,
+    new_name: String,
+    dir: String,
+) -> Result<(), String> {
+    ops::clone(&st, source, new_name, dir)
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(CpuState::default())
+        .manage(ops::OpState::default())
         .setup(|app| tray::setup(app).map_err(Into::into))
         .invoke_handler(tauri::generate_handler![
             distros,
@@ -378,7 +422,13 @@ fn main() {
             read_distro_conf,
             write_distro_conf,
             config_load,
-            config_save
+            config_save,
+            op_default_base,
+            op_status,
+            op_cancel,
+            op_export,
+            op_import,
+            op_clone
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");
