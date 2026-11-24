@@ -36,6 +36,6 @@ cwd : {spec.cwd ?? '(dossier utilisateur Windows)'}</pre>
 <style>
   .pad { padding: 0.75rem; display: grid; gap: 0.5rem; }
   label { display: grid; gap: 0.2rem; font-size: 0.85rem; }
-  pre { margin: 0; padding: 0.5rem; background: color-mix(in srgb, currentColor 8%, transparent); overflow: auto; font-size: 0.8rem; }
+  pre { margin: 0; padding: 0.5rem; background: var(--surface-2); overflow: auto; font-size: 0.8rem; }
   .hint { margin: 0; opacity: 0.6; font-size: 0.8rem; }
 </style>

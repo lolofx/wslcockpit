@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import type { MenuItem } from '../shell/menus'
 
-  export type MenuItem = { label: string; onselect: () => void; danger?: boolean; disabled?: boolean }
+
   let { items, label = 'Actions', trigger }: { items: MenuItem[]; label?: string; trigger?: Snippet } = $props()
 
   let open = $state(false)

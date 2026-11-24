@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title": "WSLCockpit", "width": 960, "height": 640 }],
+    "windows": [{ "title": "WSLCockpit", "width": 1100, "height": 700, "minWidth": 420, "minHeight": 400 }],
     "security": { "csp": null }
   },
   "bundle": {
