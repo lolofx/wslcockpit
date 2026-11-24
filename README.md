@@ -80,8 +80,7 @@ The Windows build is produced by CI (`windows-build` job); the parsers and core 
 
 Planned, in no particular order:
 
-- Download size information in the new-distribution dialog (not provided by `wsl.exe`).
-- Check for WSL updates and install them.
+- Check for WSL updates and install them (`wsl --update`) from the general menu.
 - Multilingual interface (English and French first).
 - Terminal panes inside one block; Windows Terminal split presets.
 - VHDX compaction (needs elevation); in-app update of the portable exe.

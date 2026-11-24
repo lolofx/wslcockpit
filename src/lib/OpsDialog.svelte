@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { open, save } from '@tauri-apps/plugin-dialog';
 
-  let { mode, source, version = 2, onclose }: { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse' | 'create'; source: string; version?: number; onclose: () => void } = $props();
+  let { mode, source, version = 2, onclose }: { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse' | 'create' | 'wslupdate'; source: string; version?: number; onclose: () => void } = $props();
 
   type Status = { active: boolean; kind: string; stage: string; done: string | null; error: string | null; bytes: number };
 
@@ -22,6 +22,7 @@
   let selected = $state('');
   let custom = $state(false);
   let customReason = $state('');
+  let upd = $state<{ current: string | null; latest: string | null; newer: boolean } | null>(null);
 
   const size = (b: number) =>
     b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(2)} Go` : `${Math.round(b / 1024 ** 2)} Mo`;
@@ -35,6 +36,8 @@
           ? `Convertir « ${source} »`
           : mode === 'sparse'
             ? `Mode sparse de « ${source} »`
+            : mode === 'wslupdate'
+              ? 'Mettre à jour WSL'
             : mode === 'create'
               ? 'Nouvelle distribution'
               : 'Importer une distribution'
@@ -65,6 +68,7 @@
   }
 
   onMount(() => {
+    if (mode === 'wslupdate') invoke<typeof upd>('wsl_update_check').then((u) => (upd = u));
     if (mode === 'create') {
       loadOnline();
       invoke('custom_install_available').catch((e) => (customReason = String(e)));
@@ -111,6 +115,7 @@
     try {
       if (mode === 'convert') await invoke('op_convert', { name: source, version: version === 2 ? 1 : 2 });
       else if (mode === 'sparse') await invoke('op_sparse', { name: source, on: arg });
+      else if (mode === 'wslupdate') await invoke('op_wsl_update');
       else if (mode === 'create') await invoke('op_create', { distro: selected, name: custom ? name : null, dir: custom ? path : null });
       else if (mode === 'export') await invoke('op_export', { name: source, tar: path });
       else if (mode === 'clone') await invoke('op_clone', { source, newName: name, dir: path });
@@ -144,6 +149,20 @@
       <div class="foot">
         <button class="primary" disabled={sparseReason !== ''} onclick={() => go(true)}>Activer</button>
         <button disabled={sparseReason !== ''} onclick={() => go(false)}>Désactiver</button>
+        <button onclick={onclose}>Annuler</button>
+      </div>
+    {:else if !started && mode === 'wslupdate'}
+      {#if !upd}
+        <p class="muted">Recherche de la dernière version…</p>
+      {:else}
+        <p>Version installée : <strong>{upd.current ?? 'inconnue'}</strong><br />
+          Dernière version : <strong>{upd.latest ?? 'indisponible (hors ligne ?)'}</strong></p>
+        {#if upd.latest && !upd.newer}<p class="muted">WSL est à jour.</p>{/if}
+        <p class="muted">La mise à jour arrête toutes les distributions et les terminaux ouverts. Windows peut demander une autorisation.</p>
+      {/if}
+      {#if error}<div class="error">{error}</div>{/if}
+      <div class="foot">
+        <button class="primary" disabled={!upd} onclick={() => go()}>Mettre à jour</button>
         <button onclick={onclose}>Annuler</button>
       </div>
     {:else if !started && mode === 'create'}

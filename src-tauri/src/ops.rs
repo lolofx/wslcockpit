@@ -267,3 +267,21 @@ pub fn create(
     });
     Ok(())
 }
+
+/// `wsl --update` : arrête WSL (donc toutes les distributions) et installe la dernière version.
+pub fn wsl_update(st: &OpState) -> Result<(), String> {
+    st.begin("wslupdate")?;
+    let st = st.clone();
+    std::thread::spawn(move || {
+        st.stage("Mise à jour de WSL…", None);
+        let r = st.run(vec!["--update".into()]);
+        st.finish(r.map(|_| match wsl_version() {
+            Some(v) => format!(
+                "WSL est à jour (version {}).",
+                v.iter().take(3).map(u32::to_string).collect::<Vec<_>>().join(".")
+            ),
+            None => "WSL est à jour.".to_string(),
+        }));
+    });
+    Ok(())
+}

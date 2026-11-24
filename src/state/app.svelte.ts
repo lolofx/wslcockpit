@@ -9,7 +9,7 @@ import { layoutFor, loadLayouts, setLayoutExternal } from './layouts.svelte'
 
 export type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null }
 export type Mon = { ram_bytes: number; cpu_percent: number | null; disks: Record<string, [number, number]> }
-export type OpsRequest = { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse' | 'create'; source: string; version?: number }
+export type OpsRequest = { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse' | 'create' | 'wslupdate'; source: string; version?: number }
 
 export type Tone = 'info' | 'success' | 'error'
 export type LogEntry = { id: number; at: number; tone: Tone; text: string; distro?: string }
@@ -192,6 +192,9 @@ export function startApp(light = false): () => void {
       app.update = u
       if (u) notify(`Nouvelle version ${u.version} disponible.`, 'info', { toast: false })
     })
+    .catch(() => {})
+  invoke<{ latest: string | null; newer: boolean }>('wsl_update_check')
+    .then((u) => u.newer && notify(`WSL ${u.latest} est disponible (menu général, « Mettre à jour WSL »).`, 'info', { toast: false }))
     .catch(() => {})
   const o = setInterval(pollOp, 2000)
   const stopReattach = listenReattach()

@@ -349,6 +349,53 @@ async fn check_update() -> Option<Update> {
     })
 }
 
+#[derive(Serialize)]
+struct WslUpdate {
+    current: Option<String>,
+    /// `None` : hors ligne ou GitHub injoignable.
+    latest: Option<String>,
+    newer: bool,
+}
+
+fn dotted(v: &[u32]) -> String {
+    let n = v.len().min(3);
+    v[..n]
+        .iter()
+        .map(u32::to_string)
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+/// Version de WSL installée et dernière release publique de microsoft/WSL.
+#[tauri::command]
+async fn wsl_update_check() -> WslUpdate {
+    let current = ops::wsl_version().map(|v| dotted(&v));
+    let out = powershell(
+        "try { (Invoke-RestMethod -UseBasicParsing -TimeoutSec 5 \
+         -Uri 'https://api.github.com/repos/microsoft/WSL/releases/latest' \
+         -Headers @{'User-Agent'='WSLCockpit'}).tag_name } catch {}",
+    );
+    let latest = out
+        .split_whitespace()
+        .next()
+        .filter(|t| wsl_core::parse_semver(t).is_some())
+        .map(|t| t.trim_start_matches('v').to_string());
+    let newer = match (&latest, &current) {
+        (Some(l), Some(c)) => is_newer(l, c),
+        _ => false,
+    };
+    WslUpdate {
+        current,
+        latest,
+        newer,
+    }
+}
+
+#[tauri::command]
+async fn op_wsl_update(st: State<'_, ops::OpState>) -> Result<(), String> {
+    ops::wsl_update(&st)
+}
+
 #[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
     if !url.starts_with("https://github.com/lolofx/wslcockpit/") {
@@ -605,6 +652,8 @@ fn main() {
             op_export,
             op_import,
             op_clone,
+            wsl_update_check,
+            op_wsl_update,
             list_online,
             custom_install_available,
             op_create,
