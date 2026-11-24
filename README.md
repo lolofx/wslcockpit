@@ -1,56 +1,92 @@
 # WSLCockpit
 
-Application de bureau Windows pour gérer ses distributions WSL2 : état, démarrage/arrêt, terminal, alias, politiques, monitoring, configuration, export/import/clone, suppression, conversion.
+**English** | [Français](./README.fr.md)
 
-Tauri 2 + Svelte, exe portable (pas d'installeur), thème clair/sombre selon Windows, interface en français.
+[![CI](https://github.com/lolofx/wslcockpit/actions/workflows/ci.yml/badge.svg)](https://github.com/lolofx/wslcockpit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-## Utilisation
+A small, native-feeling desktop app to manage your WSL2 distributions on Windows: see what is running, start and stop distros, edit `.wslconfig` / `wsl.conf` safely, and export, import, clone, convert or delete distributions without remembering `wsl.exe` flags.
 
-1. Télécharge `WSLCockpit.exe` (release GitHub, ou artefact `WSLCockpit-portable` de la CI).
-2. Lance-le : aucun droit administrateur n'est nécessaire.
-3. Fermer la fenêtre la réduit dans la zone de notification ; **Quitter** se trouve dans le menu de l'icône.
+Built with Tauri 2, Svelte and Rust. Portable single executable, no installer, no administrator rights, light and dark theme following Windows.
 
-SmartScreen peut afficher « Windows a protégé votre ordinateur » car l'exe n'est pas signé : *Informations complémentaires* puis *Exécuter quand même*.
+> **Status:** early development. The interface is currently in French only; English and French are planned (see the [roadmap](#roadmap)).
 
-Prérequis : Windows 10/11 avec WSL installé (`wsl --install`) et WebView2 (présent par défaut sur Windows 11).
+## Features
 
-Réglages (alias, politiques) : `%APPDATA%\WSLCockpit`. L'app vérifie au lancement si une release plus récente existe (sans message d'erreur hors ligne).
+- **Overview**: state, WSL version, default distribution, virtual disk (VHDX) size, VM RAM and CPU, free disk space of running distros.
+- **Lifecycle**: start, stop, restart, open a terminal (Windows Terminal if available, console otherwise), stop everything (`wsl --shutdown`).
+- **Policies** per distribution: manual, start when the app opens, or keep alive.
+- **Aliases**: local display names. WSL itself is never renamed.
+- **Configuration forms** for `.wslconfig` (memory, processors, swap, networking mode, `vmIdleTimeout`) and each distro's `wsl.conf` (systemd, default user, automount). Invalid values block saving; comments and unknown keys are preserved; a timestamped backup is written next to the file before every change.
+- **Distribution operations**: export, import, clone, delete (type-the-name confirmation), WSL1/WSL2 conversion, sparse VHDX mode, set default.
+- **Tray icon**: closing the window hides it; *Quit* is in the tray menu. Optional start with Windows.
+- **Update notice** when a newer GitHub release exists (silent when offline).
 
-## Fonctions
+## Install
 
-- **Liste** : état, version WSL, distribution par défaut (bouton « Par défaut »), taille du disque virtuel, RAM/CPU de la VM, espace disque des distributions démarrées.
-- **Démarrer, arrêter, redémarrer, terminal** (Windows Terminal si présent, sinon console), **Tout arrêter** (`wsl --shutdown`).
-- **Alias** : renommage d'affichage local, WSL n'est pas modifié.
-- **Politiques** par distribution : manuel, démarrer à l'ouverture, garder en vie.
-- **Configuration** : formulaires pour `.wslconfig` (mémoire, processeurs, swap, réseau, `vmIdleTimeout`) et `wsl.conf` de chaque distribution (systemd, utilisateur par défaut, montage automatique). Les valeurs invalides bloquent l'enregistrement, les commentaires et clés inconnues sont conservés, et une sauvegarde `.bak-AAAAMMJJ-HHMMSS` de l'ancien fichier est créée à côté avant chaque écriture. Une distribution arrêtée n'est démarrée qu'après accord. Un redémarrage (`wsl --shutdown`) est nécessaire pour appliquer.
+1. Download `WSLCockpit.exe` from the [releases](https://github.com/lolofx/wslcockpit/releases) page, or the `WSLCockpit-portable` artifact of a CI run.
+2. Run it. No installation and no administrator rights are needed.
 
-## Opérations sur les distributions
+Windows SmartScreen may warn about an unrecognized app because the executable is not signed: choose *More info*, then *Run anyway*.
 
-Une seule opération à la fois, avec progression et annulation. Les chemins se saisissent à la main (pas de sélecteur de fichier).
+**Requirements**: Windows 10 or 11 with WSL installed (`wsl --install`) and WebView2 (included with Windows 11).
 
-| Opération | Commande WSL | Garde-fous |
+Settings (aliases, policies) live in `%APPDATA%\WSLCockpit`.
+
+## Distribution operations
+
+One operation at a time, with progress and cancellation. Paths are typed by hand for now (no file picker yet).
+
+| Operation | WSL command | Safeguards |
 |---|---|---|
-| Exporter | `wsl --export` | ne remplace jamais un fichier existant, `.tar` obligatoire ; archive partielle supprimée si échec ou annulation |
-| Importer | `wsl --import --version 2` | nom unique (lettres, chiffres, `_ - .`), dossier absent ou vide ; import partiel désinscrit si échec ou annulation |
-| Cloner | export puis import | archive temporaire à côté du dossier choisi, supprimée ensuite |
-| Supprimer | `wsl --unregister` | saisie du nom exact (vérifiée aussi côté Rust), export proposé avant ; **irréversible** |
-| Convertir WSL1 / WSL2 | `wsl --set-version` | distribution arrêtée ; peut durer plusieurs minutes |
-| Mode sparse | `wsl --manage --set-sparse` | distribution arrêtée ; grisé avec la raison si WSL est trop ancien (seuil 2.0.0) |
+| Export | `wsl --export` | never overwrites an existing file, `.tar` required; a partial archive is removed on failure or cancel |
+| Import | `wsl --import --version 2` | unique name (letters, digits, `_ - .`), target folder must be absent or empty; a half-imported distro is unregistered on failure or cancel |
+| Clone | export, then import | temporary archive next to the chosen folder, removed afterwards |
+| Delete | `wsl --unregister` | exact name must be typed (checked again in the backend), export offered first; **irreversible** |
+| Convert WSL1 / WSL2 | `wsl --set-version` | distro must be stopped; can take several minutes |
+| Sparse mode | `wsl --manage --set-sparse` | distro must be stopped; disabled with the reason when WSL is too old (2.0.0 or later) |
 
-Limites : l'état actuel du mode sparse n'est pas affiché ; la progression d'un export/import indique les octets écrits, sans pourcentage ; aucune élévation administrateur (le compactage du disque virtuel n'est pas disponible).
+Known limits: the current sparse state is not displayed; progress shows bytes written, not a percentage; there is no elevation, so VHDX compaction is not available yet.
 
-## Développement
+## How it works
+
+The app only drives `wsl.exe`, PowerShell and `reg.exe`, with arguments passed as arrays (never concatenated into a shell string). `wsl.exe` output (UTF-16, localized) is decoded and parsed by pure functions in `crates/wsl-core`, which are unit-tested on any OS. The Tauri shell in `src-tauri/` only wires those functions to the Svelte front end.
+
+```
+crates/wsl-core/   pure parsers, INI editor, validation, operations (tested on Linux)
+src-tauri/         Tauri commands, tray, settings
+src/               Svelte front end
+```
+
+## Development
 
 ```
 npm install
-npm test                                                  # tests des parseurs (cargo test --workspace)
+npm test                                                   # cargo test --workspace
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
-npm run check                                             # svelte-check
+(cd src-tauri && cargo clippy -- -D warnings)              # src-tauri is outside the root workspace
+npm run check                                              # svelte-check
+npm run build                                              # front end build
 ```
 
-Les parseurs de `wsl.exe` vivent dans `crates/wsl-core` et se testent sous Linux ; l'app Tauri est dans `src-tauri/`.
+The Windows build is produced by CI (`windows-build` job); the parsers and core logic can be developed and tested on Linux or macOS.
 
-## Licence
+## Roadmap
 
-MIT, voir [LICENSE](./LICENSE).
+Planned, in no particular order:
+
+- Create a new distribution from the online list, with download size information.
+- Check for WSL updates and install them.
+- Multilingual interface (English and French first).
+- Integrated terminal with panes; Windows Terminal split presets.
+- VHDX compaction (needs elevation); in-app update of the portable exe.
+- Quick per-distro menu in the tray.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a PR, run the checks listed in [Development](#development); the CI runs the same ones. Please keep changes small and focused, and add unit tests for any parsing or validation logic in `crates/wsl-core`.
+
+## License
+
+MIT, see [LICENSE](./LICENSE).
