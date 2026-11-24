@@ -198,22 +198,22 @@
 </div>
 
 <style>
-  .bar { display: flex; gap: 0.5rem; padding: 0.4rem 0.6rem; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+  .bar { display: flex; gap: 0.5rem; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
   .ws { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; }
   .stack { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .block { display: flex; flex-direction: column; min-height: 0; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 6px; margin: 2px; overflow: hidden; }
+  .block { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: 6px; margin: 2px; overflow: hidden; }
   .block.dragging { opacity: 0.4; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 0.2rem 0.5rem; background: color-mix(in srgb, currentColor 8%, transparent); cursor: grab; user-select: none; touch-action: none; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 0.2rem 0.5rem; background: var(--surface-2); cursor: grab; user-select: none; touch-action: none; }
   .t { font-size: 0.85rem; font-weight: 600; }
   .body { flex: 1; min-height: 0; overflow: auto; }
   .split { flex: none; touch-action: none; }
   .split.v { width: 6px; cursor: col-resize; }
   .split.h { height: 6px; cursor: row-resize; }
-  .split:hover { background: color-mix(in srgb, currentColor 25%, transparent); }
+  .split:hover { background: var(--surface-3); }
   .ind { position: absolute; background: #3b82f6; border-radius: 2px; pointer-events: none; opacity: 0.8; z-index: 5; }
   .menu { position: relative; }
   .menu summary { cursor: pointer; list-style: none; padding: 0 0.4rem; }
-  .pop { position: absolute; right: 0; z-index: 10; display: grid; background: Canvas; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 6px; padding: 0.25rem; min-width: 11rem; }
+  .pop { position: absolute; right: 0; z-index: 10; display: grid; background: var(--surface-1); border: 1px solid var(--surface-3); border-radius: 6px; padding: 0.25rem; min-width: 11rem; }
   .pop button { text-align: left; border: 0; background: none; padding: 0.3rem 0.5rem; color: inherit; cursor: pointer; }
   .pop button:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
   @media (max-width: 700px) {
