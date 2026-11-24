@@ -405,6 +405,21 @@ async fn op_clone(
     ops::clone(&st, source, new_name, dir)
 }
 
+#[tauri::command]
+fn sparse_available() -> Result<(), String> {
+    wsl_core::sparse_supported(ops::wsl_version().as_deref())
+}
+
+#[tauri::command]
+async fn op_convert(st: State<'_, ops::OpState>, name: String, version: u8) -> Result<(), String> {
+    ops::convert(&st, name, version)
+}
+
+#[tauri::command]
+async fn op_sparse(st: State<'_, ops::OpState>, name: String, on: bool) -> Result<(), String> {
+    ops::sparse(&st, name, on)
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(CpuState::default())
@@ -440,7 +455,10 @@ fn main() {
             op_cancel,
             op_export,
             op_import,
-            op_clone
+            op_clone,
+            sparse_available,
+            op_convert,
+            op_sparse
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de WSLCockpit");

@@ -19,7 +19,7 @@
   let busy = $state<string | null>(null);
   let showConfig = $state(false);
   let deleting = $state<string | null>(null);
-  let ops = $state<{ mode: 'export' | 'import' | 'clone'; source: string } | null>(null);
+  let ops = $state<{ mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse'; source: string; version?: number } | null>(null);
 
   async function toggleAutostart() {
     try {
@@ -203,6 +203,8 @@
           <button onclick={() => act('restart', d.name)} disabled={busy !== null}>Redémarrer</button>
           <button onclick={() => act('stop', d.name)} disabled={busy !== null}>Arrêter</button>
         {:else}
+          <button onclick={() => (ops = { mode: 'convert', source: d.name, version: d.version })} disabled={busy !== null}>Convertir</button>
+          <button onclick={() => (ops = { mode: 'sparse', source: d.name })} disabled={busy !== null}>Sparse</button>
           <button onclick={() => act('terminal', d.name)} disabled={busy !== null}>Terminal</button>
           <button onclick={() => act('start', d.name)} disabled={busy !== null}>Démarrer</button>
         {/if}
@@ -218,7 +220,7 @@
     />
   {/if}
   {#if ops}
-    <OpsDialog mode={ops.mode} source={ops.source} onclose={() => { ops = null; refresh(); }} />
+    <OpsDialog mode={ops.mode} source={ops.source} version={ops.version} onclose={() => { ops = null; refresh(); }} />
   {/if}
 </main>
 

@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use wsl_core::{
-    check_new_name, check_tar_target, check_target_dir, export_args, import_args, list_distros,
-    run_cancellable, WslExe,
+    check_new_name, check_tar_target, check_target_dir, convert_args, export_args, import_args,
+    list_distros, run_cancellable, sparse_args, sparse_supported, WslExe,
 };
 
 #[derive(Clone, Default, Serialize)]
@@ -171,6 +171,57 @@ pub fn clone(st: &OpState, source: String, new_name: String, dir: String) -> Res
         }
         let _ = std::fs::remove_file(&tmp);
         st.finish(r.map(|_| format!("« {source} » clonée en « {new_name} ».")));
+    });
+    Ok(())
+}
+
+/// Version de WSL installée (`wsl --version`), `None` si absente ou trop ancienne pour la donner.
+pub fn wsl_version() -> Option<Vec<u32>> {
+    wsl_core::run_checked(&WslExe, &["--version"])
+        .ok()
+        .and_then(|t| wsl_core::parse_wsl_version(&t))
+}
+
+fn require_stopped(name: &str) -> Result<wsl_core::DistroEntry, String> {
+    let d = list_distros(&WslExe)
+        .map_err(crate::msg)?
+        .into_iter()
+        .find(|d| d.name == name)
+        .ok_or("Cette distribution n'existe plus.")?;
+    if d.state != wsl_core::DistroState::Stopped {
+        return Err("Arrête la distribution avant cette opération.".into());
+    }
+    Ok(d)
+}
+
+pub fn convert(st: &OpState, name: String, version: u8) -> Result<(), String> {
+    if !matches!(version, 1 | 2) {
+        return Err("Version WSL invalide (1 ou 2).".into());
+    }
+    let d = require_stopped(&name)?;
+    if d.version == version {
+        return Err(format!("« {name} » est déjà en WSL{version}."));
+    }
+    st.begin("convert")?;
+    let st = st.clone();
+    std::thread::spawn(move || {
+        st.stage(&format!("Conversion en WSL{version}…"), None);
+        let r = st.run(convert_args(&name, version));
+        st.finish(r.map(|_| format!("« {name} » est maintenant en WSL{version}.")));
+    });
+    Ok(())
+}
+
+pub fn sparse(st: &OpState, name: String, on: bool) -> Result<(), String> {
+    sparse_supported(wsl_version().as_deref())?;
+    require_stopped(&name)?;
+    st.begin("sparse")?;
+    let st = st.clone();
+    std::thread::spawn(move || {
+        st.stage("Changement du mode sparse…", None);
+        let r = st.run(sparse_args(&name, on));
+        let msg = if on { "activé" } else { "désactivé" };
+        st.finish(r.map(|_| format!("Mode sparse {msg} pour « {name} ».")));
     });
     Ok(())
 }
