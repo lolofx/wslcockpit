@@ -511,6 +511,40 @@ async fn op_clone(
     ops::clone(&st, source, new_name, dir)
 }
 
+#[derive(Serialize)]
+struct Online {
+    name: String,
+    friendly: String,
+}
+
+/// Catalogue des distributions installables (réseau requis).
+#[tauri::command]
+async fn list_online() -> Result<Vec<Online>, String> {
+    let text = wsl_core::run_checked(&WslExe, &["--list", "--online"]).map_err(msg)?;
+    Ok(wsl_core::parse_online(&text)
+        .into_iter()
+        .map(|d| Online {
+            name: d.name,
+            friendly: d.friendly,
+        })
+        .collect())
+}
+
+#[tauri::command]
+fn custom_install_available() -> Result<(), String> {
+    wsl_core::custom_install_supported(ops::wsl_version().as_deref())
+}
+
+#[tauri::command]
+async fn op_create(
+    st: State<'_, ops::OpState>,
+    distro: String,
+    name: Option<String>,
+    dir: Option<String>,
+) -> Result<(), String> {
+    ops::create(&st, distro, name, dir)
+}
+
 #[tauri::command]
 fn sparse_available() -> Result<(), String> {
     wsl_core::sparse_supported(ops::wsl_version().as_deref())
@@ -571,6 +605,9 @@ fn main() {
             op_export,
             op_import,
             op_clone,
+            list_online,
+            custom_install_available,
+            op_create,
             sparse_available,
             op_convert,
             op_sparse

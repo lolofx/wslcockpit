@@ -17,6 +17,7 @@ Built with Tauri 2, Svelte and Rust. Portable single executable, no installer, n
 - **Lifecycle**: start, stop, restart, open a terminal (Windows Terminal if available, console otherwise), stop everything (`wsl --shutdown`).
 - **Workspace** per distribution: resizable stacks of blocks (state, configuration, log, terminals), drag and drop, named layouts saved in `%APPDATA%\WSLCockpit\layouts.json`, blocks detachable into their own window.
 - **Integrated terminals** (ConPTY + xterm.js): WSL shell, or Windows PowerShell started on the distro's disk (`\\wsl.localhost\...`) or the user profile. Sessions survive moving a block or switching distribution.
+- **New distribution** from the online catalogue (`wsl --install <distro> --no-launch`), with optional custom name and folder (WSL 2.4.4+). Useful for disposable test distributions.
 - **Notifications**: log of actions and errors, Windows notification when a long operation ends.
 - **Policies** per distribution: manual, start when the app opens, or keep alive.
 - **Aliases**: local display names. WSL itself is never renamed.
@@ -79,7 +80,7 @@ The Windows build is produced by CI (`windows-build` job); the parsers and core 
 
 Planned, in no particular order:
 
-- Create a new distribution from the online list, with download size information.
+- Download size information in the new-distribution dialog (not provided by `wsl.exe`).
 - Check for WSL updates and install them.
 - Multilingual interface (English and French first).
 - Terminal panes inside one block; Windows Terminal split presets.

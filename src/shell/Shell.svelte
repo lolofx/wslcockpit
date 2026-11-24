@@ -37,6 +37,7 @@
   }
 
   const globalMenu = $derived<MenuItem[]>([
+    { label: 'Nouvelle distribution…', onselect: () => (app.ops = { mode: 'create', source: '' }) },
     { label: 'Importer une distribution…', onselect: () => (app.ops = { mode: 'import', source: '' }) },
     { label: 'Configuration…', onselect: () => go('settings') },
     { label: `Démarrer avec Windows : ${app.autostart ? 'oui' : 'non'}`, onselect: () => void toggleAutostart() },

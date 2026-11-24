@@ -9,7 +9,7 @@ import { layoutFor, loadLayouts, setLayoutExternal } from './layouts.svelte'
 
 export type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null }
 export type Mon = { ram_bytes: number; cpu_percent: number | null; disks: Record<string, [number, number]> }
-export type OpsRequest = { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse'; source: string; version?: number }
+export type OpsRequest = { mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse' | 'create'; source: string; version?: number }
 
 export type Tone = 'info' | 'success' | 'error'
 export type LogEntry = { id: number; at: number; tone: Tone; text: string; distro?: string }

@@ -5,8 +5,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use wsl_core::{
-    check_new_name, check_tar_target, check_target_dir, convert_args, export_args, import_args,
-    list_distros, run_cancellable, sparse_args, sparse_supported, WslExe,
+    check_new_name, check_tar_target, check_target_dir, convert_args, custom_install_supported,
+    export_args, import_args, install_args, list_distros, run_cancellable, sparse_args,
+    sparse_supported, WslExe,
 };
 
 #[derive(Clone, Default, Serialize)]
@@ -222,6 +223,47 @@ pub fn sparse(st: &OpState, name: String, on: bool) -> Result<(), String> {
         let r = st.run(sparse_args(&name, on));
         let msg = if on { "activé" } else { "désactivé" };
         st.finish(r.map(|_| format!("Mode sparse {msg} pour « {name} ».")));
+    });
+    Ok(())
+}
+
+/// Installe une distribution du catalogue en ligne. `name` et `dir` (facultatifs, WSL 2.4.4+)
+/// donnent un nom et un dossier propres ; sans eux WSL choisit le nom du catalogue.
+pub fn create(
+    st: &OpState,
+    distro: String,
+    name: Option<String>,
+    dir: Option<String>,
+) -> Result<(), String> {
+    let existing = existing_names()?;
+    let final_name = name.clone().unwrap_or_else(|| distro.clone());
+    check_new_name(&final_name, &existing)?;
+    if name.is_some() || dir.is_some() {
+        custom_install_supported(wsl_version().as_deref())?;
+    }
+    let dir = dir.map(PathBuf::from);
+    if let Some(d) = &dir {
+        check_target_dir(d)?;
+    }
+    st.begin("create")?;
+    let st = st.clone();
+    std::thread::spawn(move || {
+        st.stage(
+            &format!("Téléchargement et installation de {distro}…"),
+            dir.clone(),
+        );
+        let args = install_args(
+            &distro,
+            name.as_deref(),
+            dir.as_deref().map(path_str).as_deref(),
+        );
+        let r = st.run(args);
+        if r.is_err() {
+            unregister_partial(&st, &final_name);
+        }
+        st.finish(r.map(|_| {
+            format!("« {final_name} » installée. Ouvre un terminal pour créer l'utilisateur.")
+        }));
     });
     Ok(())
 }
