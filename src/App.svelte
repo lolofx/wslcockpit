@@ -4,6 +4,7 @@
   import OpsDialog from './lib/OpsDialog.svelte';
   import DeleteDialog from './lib/DeleteDialog.svelte';
   import ConfigPanel from './lib/ConfigPanel.svelte';
+  import ProtoApp from './ProtoApp.svelte';
 
   type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null };
 
@@ -17,6 +18,7 @@
   let update = $state<{ version: string; url: string } | null>(null);
   let autostart = $state(false);
   let busy = $state<string | null>(null);
+  let proto = $state(false);
   let showConfig = $state(false);
   let deleting = $state<string | null>(null);
   let ops = $state<{ mode: 'export' | 'import' | 'clone' | 'convert' | 'sparse'; source: string; version?: number } | null>(null);
@@ -133,9 +135,13 @@
   });
 </script>
 
+{#if proto}
+  <ProtoApp onexit={() => (proto = false)} />
+{:else}
 <main>
   <header>
     <h1>WSLCockpit</h1>
+    <button onclick={() => (proto = true)}>Prototype UX</button>
     <label class="auto"><input type="checkbox" checked={autostart} onchange={toggleAutostart} /> Démarrer avec Windows</label>
     <button onclick={() => (ops = { mode: 'import', source: '' })} style="margin-right: 0.5rem">Importer</button>
     <button onclick={() => (showConfig = true)} style="margin-right: 0.5rem">Configuration</button>
@@ -223,6 +229,7 @@
     <OpsDialog mode={ops.mode} source={ops.source} version={ops.version} onclose={() => { ops = null; refresh(); }} />
   {/if}
 </main>
+{/if}
 
 <style>
   main { padding: 1.25rem; max-width: 760px; margin: 0 auto; }
