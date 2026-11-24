@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Dialog from '../ui/Dialog.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
 
@@ -66,9 +67,7 @@
   }
 </script>
 
-<div class="overlay">
-  <div class="dialog">
-    <h2>{title}</h2>
+<Dialog title={title} {onclose} width={560}>
     {#if !started && mode === 'convert'}
       <p>
         Conversion de WSL{version} vers WSL{version === 2 ? 1 : 2}. Cela peut durer plusieurs minutes ;
@@ -129,15 +128,11 @@
         <button onclick={onclose}>Fermer</button>
       {/if}
     {/if}
-  </div>
-</div>
+</Dialog>
 
 <style>
-  .overlay { position: fixed; inset: 0; background: #0008; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-  .dialog { background: Canvas; color: CanvasText; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); border-radius: 10px; padding: 1.2rem; width: min(560px, 100%); }
-  h2 { font-size: 1.1rem; margin: 0 0 0.8rem; overflow-wrap: anywhere; }
   label { display: block; margin-bottom: 0.7rem; font-size: 0.9rem; }
-  input { display: block; width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; }
+  input { display: block; width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text); }
   progress { width: 100%; }
   .foot { display: flex; gap: 0.5rem; }
   .primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
@@ -145,5 +140,5 @@
   .error { padding: 0.6rem 0.9rem; margin: 0.6rem 0; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
   .ok { padding: 0.6rem 0.9rem; margin: 0.6rem 0; border-radius: 8px; background: #2ea04333; border: 1px solid #2ea043; }
   button:disabled { opacity: 0.5; cursor: default; }
-  button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; cursor: pointer; }
+  button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text); cursor: pointer; }
 </style>
