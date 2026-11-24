@@ -22,8 +22,8 @@ pub use config_validate::{validate, Field};
 pub use decode::decode_output;
 pub use errors::{classify_failure, WslError};
 pub use exec::{
-    list_distros, open_terminal, powershell, read_lxss, run_checked, shutdown_all, start_distro,
-    start_once, stop_distro, RawOutput, WslExe, WslRunner,
+    list_distros, open_terminal, powershell, read_lxss, run_checked, set_default, shutdown_all,
+    start_distro, start_once, stop_distro, RawOutput, WslExe, WslRunner,
 };
 pub use ini::Ini;
 pub use monitor::{cpu_percent, parse_df, parse_vm_sample, VmSample, VM_SCRIPT};

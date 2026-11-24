@@ -80,6 +80,11 @@ async fn start(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn set_default_distro(name: String) -> Result<(), String> {
+    wsl_core::set_default(&WslExe, &name).map_err(msg)
+}
+
+#[tauri::command]
 async fn stop(name: String) -> Result<(), String> {
     stop_distro(&WslExe, &name).map_err(msg)
 }
@@ -354,6 +359,7 @@ fn main() {
             distros,
             start,
             stop,
+            set_default_distro,
             restart,
             terminal,
             shutdown,

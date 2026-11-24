@@ -85,6 +85,18 @@
     await refresh();
   }
 
+  async function makeDefault(name: string) {
+    busy = name;
+    try {
+      await invoke('set_default_distro', { name });
+      error = '';
+    } catch (e) {
+      error = String(e);
+    }
+    busy = null;
+    await refresh();
+  }
+
   async function shutdownAll() {
     const running = distros.filter((d) => d.state === 'running').map((d) => d.name);
     const list = running.length ? running.join(', ') : 'aucune distribution en marche';
@@ -166,7 +178,7 @@
           {#if aliases[d.name]}<span class="muted state">({d.name})</span>{/if}
           <button class="link" onclick={() => rename(d)} title="Renommer (alias local)">✎</button>
           <span class="tag">WSL{d.version}</span>
-          {#if d.is_default}<span class="tag">défaut</span>{/if}
+          {#if d.is_default}<span class="tag">défaut</span>{:else}<button class="link" onclick={() => makeDefault(d.name)} disabled={busy !== null} title="Définir comme distribution par défaut">Par défaut</button>{/if}
         </div>
         <div class="muted state meta">
           {label(d.state)}{#if mon?.disks[d.name]} · Disque {size(mon.disks[d.name][0])} / {size(mon.disks[d.name][1])}{/if}{#if d.vhdx_bytes !== null} · VHDX {size(d.vhdx_bytes)}{/if}
