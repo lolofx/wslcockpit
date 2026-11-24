@@ -86,6 +86,17 @@ async fn set_default_distro(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn delete_distro(name: String, typed: String) -> Result<(), String> {
+    wsl_core::unregister_distro(&WslExe, &name, &typed).map_err(msg)?;
+    // Nettoie les réglages locaux de cette distro.
+    for file in ["aliases.json", "policies.json"] {
+        let a = settings::apply(settings::load_file(file), &name, "");
+        let _ = settings::save_file(file, &a);
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn stop(name: String) -> Result<(), String> {
     stop_distro(&WslExe, &name).map_err(msg)
 }
@@ -403,6 +414,7 @@ fn main() {
             distros,
             start,
             stop,
+            delete_distro,
             set_default_distro,
             restart,
             terminal,
