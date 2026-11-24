@@ -15,6 +15,9 @@ Built with Tauri 2, Svelte and Rust. Portable single executable, no installer, n
 
 - **Overview**: state, WSL version, default distribution, virtual disk (VHDX) size, VM RAM and CPU, free disk space of running distros.
 - **Lifecycle**: start, stop, restart, open a terminal (Windows Terminal if available, console otherwise), stop everything (`wsl --shutdown`).
+- **Workspace** per distribution: resizable stacks of blocks (state, configuration, log, terminals), drag and drop, named layouts saved in `%APPDATA%\WSLCockpit\layouts.json`, blocks detachable into their own window.
+- **Integrated terminals** (ConPTY + xterm.js): WSL shell, or Windows PowerShell started on the distro's disk (`\\wsl.localhost\...`) or the user profile. Sessions survive moving a block or switching distribution.
+- **Notifications**: log of actions and errors, Windows notification when a long operation ends.
 - **Policies** per distribution: manual, start when the app opens, or keep alive.
 - **Aliases**: local display names. WSL itself is never renamed.
 - **Configuration forms** for `.wslconfig` (memory, processors, swap, networking mode, `vmIdleTimeout`) and each distro's `wsl.conf` (systemd, default user, automount). Invalid values block saving; comments and unknown keys are preserved; a timestamped backup is written next to the file before every change.
@@ -79,7 +82,7 @@ Planned, in no particular order:
 - Create a new distribution from the online list, with download size information.
 - Check for WSL updates and install them.
 - Multilingual interface (English and French first).
-- Integrated terminal with panes; Windows Terminal split presets.
+- Terminal panes inside one block; Windows Terminal split presets.
 - VHDX compaction (needs elevation); in-app update of the portable exe.
 - Quick per-distro menu in the tray.
 

@@ -2,6 +2,7 @@
 
 mod autostart;
 mod ops;
+mod pty;
 mod settings;
 mod tray;
 
@@ -9,7 +10,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Instant;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 use wsl_core::{
     apply_values, cpu_percent, is_newer, list_distros, now_timestamp, open_terminal, parse_df,
     parse_lxss, parse_vm_sample, powershell, read_lxss, read_values, read_wslconf, run_checked,
@@ -110,6 +111,87 @@ async fn restart(name: String) -> Result<(), String> {
 #[tauri::command]
 async fn terminal(name: String) -> Result<(), String> {
     open_terminal(&name).map_err(msg)
+}
+
+#[derive(Serialize)]
+struct PtyOpened {
+    replay: String,
+    end: u64,
+    alive: bool,
+}
+
+#[derive(Serialize, Clone)]
+struct PtyData {
+    id: String,
+    data: String,
+    end: u64,
+}
+
+/// Seuls ces programmes peuvent être lancés dans un terminal intégré (jamais un chemin arbitraire).
+fn allowed_program(p: &str) -> bool {
+    matches!(
+        p.to_ascii_lowercase().as_str(),
+        "wsl.exe" | "powershell.exe"
+    )
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn pty_open(
+    app: tauri::AppHandle,
+    st: State<pty::PtyState>,
+    id: String,
+    program: String,
+    args: Vec<String>,
+    cwd: Option<String>,
+    cols: u16,
+    rows: u16,
+) -> Result<PtyOpened, String> {
+    if !allowed_program(&program) {
+        return Err(format!("Programme non autorisé : {program}"));
+    }
+    let sink: pty::Sink = std::sync::Arc::new(move |ev| match ev {
+        pty::Event::Data { id, bytes, end } => {
+            use base64::Engine;
+            let data = base64::engine::general_purpose::STANDARD.encode(bytes);
+            let _ = app.emit("pty-data", PtyData { id, data, end });
+        }
+        pty::Event::Exit { id } => {
+            let _ = app.emit("pty-exit", id);
+        }
+    });
+    let o = st.open(
+        &id,
+        &pty::Spec {
+            program,
+            args,
+            cwd,
+            cols,
+            rows,
+        },
+        sink,
+    )?;
+    use base64::Engine;
+    Ok(PtyOpened {
+        replay: base64::engine::general_purpose::STANDARD.encode(o.replay),
+        end: o.end,
+        alive: o.alive,
+    })
+}
+
+#[tauri::command]
+fn pty_write(st: State<pty::PtyState>, id: String, data: String) -> Result<(), String> {
+    st.write(&id, data.as_bytes())
+}
+
+#[tauri::command]
+fn pty_resize(st: State<pty::PtyState>, id: String, cols: u16, rows: u16) -> Result<(), String> {
+    st.resize(&id, cols, rows)
+}
+
+#[tauri::command]
+fn pty_close(st: State<pty::PtyState>, id: String) {
+    st.close(&id);
 }
 
 /// Dispositions des espaces de travail (layouts.json) : document JSON opaque pour le Rust,
@@ -450,6 +532,7 @@ fn main() {
         .plugin(tauri_plugin_notification::init())
         .manage(CpuState::default())
         .manage(ops::OpState::default())
+        .manage(pty::PtyState::default())
         .setup(|app| tray::setup(app).map_err(Into::into))
         .invoke_handler(tauri::generate_handler![
             distros,
@@ -460,6 +543,10 @@ fn main() {
             restart,
             terminal,
             shutdown,
+            pty_open,
+            pty_write,
+            pty_resize,
+            pty_close,
             layouts_load,
             layouts_save,
             aliases,
@@ -488,6 +575,23 @@ fn main() {
             op_convert,
             op_sparse
         ])
-        .run(tauri::generate_context!())
-        .expect("erreur au lancement de WSLCockpit");
+        .build(tauri::generate_context!())
+        .expect("erreur au lancement de WSLCockpit")
+        .run(|app, event| {
+            // À la sortie, aucun terminal intégré ne doit survivre.
+            if let tauri::RunEvent::Exit = event {
+                app.state::<pty::PtyState>().kill_all();
+            }
+        });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn programmes_autorises() {
+        assert!(allowed_program("wsl.exe") && allowed_program("PowerShell.exe"));
+        assert!(!allowed_program("cmd.exe") && !allowed_program("C:\\x\\wsl.exe"));
+    }
 }

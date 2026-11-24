@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte'
+  import { invoke } from '@tauri-apps/api/core'
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
   import {
     defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, setBlockProps,
@@ -29,6 +30,24 @@
     const snap = $state.snapshot(layout)
     untrack(() => {
       if (loadedFor === distro) setLayout(distro, snap)
+    })
+  })
+
+  // Un terminal vit tant que son bloc existe (déplacer ou détacher ne le coupe pas) : quand un bloc
+  // terminal disparaît de la disposition de la même distro, sa session est fermée.
+  const keep = new Set<string>() // blocs détachés : leur session continue dans la fenêtre flottante
+  let prevTerms = new Set<string>()
+  let prevFor = ''
+  $effect(() => {
+    const snap = $state.snapshot(layout)
+    const ids = new Set(snap.stacks.flatMap((s) => s.blocks).filter((b) => b.type === 'terminal').map((b) => b.id))
+    untrack(() => {
+      if (prevFor === loadedFor) {
+        for (const t of prevTerms) if (!ids.has(t) && !keep.delete(t)) void invoke('pty_close', { id: t }).catch(() => {})
+      }
+      for (const t of ids) keep.delete(t) // rattaché : il redevient un bloc ordinaire
+      prevTerms = ids
+      prevFor = loadedFor
     })
   })
 
@@ -178,7 +197,10 @@
       minHeight: 200,
     })
     w.once('tauri://error', () => {}) // échec de création : le bloc reste en place (retiré seulement au succès)
-    w.once('tauri://created', () => (layout = removeBlock(layout, b.id)))
+    w.once('tauri://created', () => {
+      keep.add(b.id)
+      layout = removeBlock(layout, b.id)
+    })
   }
 
   const blockMenu = (b: Block): MenuItem[] => [

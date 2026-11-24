@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { parseDoc, savePreset, applyPreset, deletePreset, emptyDoc, defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, parseLayout, findBlock, MAX_STACKS } from './model.ts'
-import { terminalSpec, wslUncPath } from './terminals.ts'
+import { terminalSpec, wslUncPath, psQuote } from './terminals.ts'
 
 const sum = (xs: { size: number }[]) => xs.reduce((a, x) => a + x.size, 0)
 
@@ -66,7 +66,10 @@ test('terminaux : chemin UNC et specs', () => {
   assert.deepEqual(w.args, ['-d', 'Ubuntu', '--cd', '~'])
   const p = terminalSpec('Ubuntu', { kind: 'powershell', start: 'distro', path: '/home/lolofx' })
   assert.equal(p.program, 'powershell.exe')
-  assert.equal(p.cwd, '\\\\wsl.localhost\\Ubuntu\\home\\lolofx')
+  assert.equal(p.cwd, null)
+  assert.deepEqual(p.args.slice(0, 3), ['-NoLogo', '-NoExit', '-Command'])
+  assert.equal(p.args[3], "Set-Location -LiteralPath '\\\\wsl.localhost\\Ubuntu\\home\\lolofx'")
+  assert.equal(psQuote("o'neil"), "'o''neil'")
   assert.equal(terminalSpec('Ubuntu', { kind: 'powershell', start: 'profile' }).cwd, null)
 })
 

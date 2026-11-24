@@ -1,4 +1,4 @@
-// Spécification d'un terminal : pure, sans exécution. La phase 7 la passera au PTY (ConPTY).
+// Spécification d'un terminal : pure, sans exécution ; passée au pseudo-terminal (ConPTY) par pty_open.
 // `wsl`        : shell dans la distro (wsl.exe -d <distro> --cd <dossier>).
 // `powershell` : PowerShell Windows, hors WSL, dont le dossier de départ est soit le disque de la distro
 //                vu depuis Windows (\\wsl.localhost\<distro>\...), soit le profil utilisateur.
@@ -19,11 +19,21 @@ export function terminalSpec(distro: string, props: TerminalProps): TerminalSpec
     if (props.cwd) args.push('--cd', props.cwd)
     return { program: 'wsl.exe', args, cwd: null, label: `${distro}${props.cwd ? ` ${props.cwd}` : ''}` }
   }
-  const cwd = props.start === 'profile' ? null : wslUncPath(distro, props.path || '/home')
+  if (props.start === 'profile') {
+    return { program: 'powershell.exe', args: ['-NoLogo'], cwd: null, label: 'PowerShell (profil)' }
+  }
+  // Le dossier de départ UNC (\\wsl.localhost\...) n'est pas fiable comme dossier de processus :
+  // PowerShell s'y place lui-même au démarrage.
+  const unc = wslUncPath(distro, props.path || '/home')
   return {
     program: 'powershell.exe',
-    args: ['-NoLogo'],
-    cwd, // null = dossier utilisateur Windows (par défaut du processus)
-    label: props.start === 'profile' ? 'PowerShell (profil)' : `PowerShell → ${cwd}`,
+    args: ['-NoLogo', '-NoExit', '-Command', `Set-Location -LiteralPath ${psQuote(unc)}`],
+    cwd: null,
+    label: `PowerShell → ${unc}`,
   }
+}
+
+// Chaîne PowerShell entre apostrophes : seule l'apostrophe est spéciale (doublée).
+export function psQuote(s: string): string {
+  return `'${s.replace(/'/g, "''")}'`
 }

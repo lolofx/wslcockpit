@@ -31,6 +31,8 @@
   })
 
   function key(e: KeyboardEvent) {
+    // Dans un terminal, Ctrl+K appartient au shell (effacer jusqu'en fin de ligne).
+    if ((e.target as HTMLElement | null)?.closest?.('.xterm')) return
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette = !palette }
   }
 
