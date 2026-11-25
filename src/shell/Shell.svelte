@@ -185,7 +185,7 @@
   .dot.run { background: var(--success); }
   .lb { display: none; font-size: var(--fs-sm); }
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .top { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); border-bottom: 1px solid var(--border); background: var(--surface-1); }
+  .top { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); margin: 2px 2px 0 2px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2); }
   h1 { margin: 0; font-size: var(--fs-lg); overflow-wrap: anywhere; }
   .grow { flex: 1; }
   .hamb { display: none; border: 0; background: none; color: var(--text); font-size: 1.2rem; cursor: pointer; }
