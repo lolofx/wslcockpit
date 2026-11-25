@@ -1,14 +1,15 @@
 <script lang="ts">
+  import { t, lang } from '../i18n/index.svelte'
   import Dialog from '../ui/Dialog.svelte'
   import Button from '../ui/Button.svelte'
   import { app, display } from '../state/app.svelte'
   let { onclose }: { onclose: () => void } = $props()
-  const when = (t: number) => new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  const when = (ts: number) => new Date(ts).toLocaleString(lang() === 'fr' ? 'fr-FR' : 'en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 </script>
 
-<Dialog title="Notifications" {onclose} width={560}>
+<Dialog title={t('shell.notifications.title')} {onclose} width={560}>
   {#if app.log.length === 0}
-    <p class="empty">Aucune notification.</p>
+    <p class="empty">{t('shell.notifications.empty')}</p>
   {:else}
     <ul>
       {#each app.log as e (e.id)}
@@ -18,7 +19,7 @@
         </li>
       {/each}
     </ul>
-    <div class="foot"><Button onclick={() => (app.log = [])}>Tout effacer</Button></div>
+    <div class="foot"><Button onclick={() => (app.log = [])}>{t('shell.notifications.clear')}</Button></div>
   {/if}
 </Dialog>
 

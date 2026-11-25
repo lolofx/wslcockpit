@@ -1,0 +1,9 @@
+{
+  "started": "{{name}} : démarrée.",
+  "stopped": "{{name}} : arrêtée.",
+  "restarted": "{{name}} : redémarrée.",
+  "terminal": "{{name}} : terminal ouvert.",
+  "shutdownDone": "Toutes les distributions sont arrêtées.",
+  "update": "Nouvelle version {{version}} disponible.",
+  "wslUpdate": "WSL {{latest}} est disponible (menu général, « Mettre à jour WSL »)."
+}

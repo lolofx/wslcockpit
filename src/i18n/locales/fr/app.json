@@ -1,0 +1,13 @@
+{
+  "icon": { "title": "Icône de « {{label}} »" },
+  "alias": {
+    "title": "Alias pour « {{name}} »",
+    "message": "Vide = retirer l’alias. Affichage seulement, WSL n’est pas modifié."
+  },
+  "shutdown": {
+    "title": "Tout arrêter ?",
+    "message": "wsl --shutdown\n\nEn marche : {{list}}",
+    "none": "aucune distribution en marche",
+    "confirm": "Tout arrêter"
+  }
+}

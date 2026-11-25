@@ -1,0 +1,76 @@
+{
+  "size": {
+    "gb": "{{n}} Go",
+    "mb": "{{n}} Mo"
+  },
+  "title": {
+    "export": "Exporter « {{name}} »",
+    "clone": "Cloner « {{name}} »",
+    "convert": "Convertir « {{name}} »",
+    "sparse": "Mode sparse de « {{name}} »",
+    "wslupdate": "Mettre à jour WSL",
+    "create": "Nouvelle distribution",
+    "import": "Importer une distribution"
+  },
+  "tarFilter": "Archive tar",
+  "starting": "Démarrage…",
+  "cancel": "Annuler",
+  "close": "Fermer",
+  "browse": "Parcourir…",
+  "convert": {
+    "text": "Conversion de WSL{{from}} vers WSL{{to}}. Cela peut durer plusieurs minutes ; la distribution doit être arrêtée. Fais un export avant si elle est importante.",
+    "go": "Convertir en WSL{{to}}"
+  },
+  "sparse": {
+    "text": "Le mode sparse permet à WSL de rendre l'espace libéré au disque Windows. La distribution doit être arrêtée.",
+    "enable": "Activer",
+    "disable": "Désactiver"
+  },
+  "update": {
+    "searching": "Recherche de la dernière version…",
+    "installed": "Version installée :",
+    "latest": "Dernière version :",
+    "unknown": "inconnue",
+    "unavailable": "indisponible (hors ligne ?)",
+    "upToDate": "WSL est à jour.",
+    "warning": "La mise à jour arrête toutes les distributions et les terminaux ouverts. Windows peut demander une autorisation.",
+    "go": "Mettre à jour"
+  },
+  "create": {
+    "loading": "Chargement du catalogue…",
+    "retry": "Réessayer",
+    "available": "Distributions disponibles",
+    "weight": "Poids du téléchargement : non fourni par WSL (souvent de 300 Mo à 1 Go).",
+    "custom": "Choisir le nom et le dossier d'installation",
+    "name": "Nom",
+    "dir": "Dossier d'installation (vide ou à créer)",
+    "default": "Sans choix, WSL utilise le nom du catalogue et son dossier par défaut. L'utilisateur se crée au premier terminal.",
+    "go": "Installer"
+  },
+  "form": {
+    "newName": "Nom de la nouvelle distribution",
+    "namePlaceholder": "ex. Ubuntu-test",
+    "tarSource": "Archive à importer (.tar)",
+    "exportFile": "Fichier d'export (.tar)",
+    "installDir": "Dossier d'installation (vide ou à créer)",
+    "exportHint": "Un fichier existant n'est jamais écrasé. L'export peut prendre plusieurs minutes.",
+    "dirHint": "Le dossier ne doit pas contenir de fichiers.",
+    "cloneHint": "Le clone passe par une archive temporaire, supprimée ensuite.",
+    "export": "Exporter",
+    "clone": "Cloner",
+    "import": "Importer"
+  },
+  "progress": {
+    "written": "{{size}} écrits",
+    "cancel": "Annuler l'opération"
+  },
+  "cloneSuffix": "{{name}}-copie",
+  "delete": {
+    "title": "Supprimer « {{name}} »",
+    "text": "Irréversible : la distribution, tous ses fichiers et son disque virtuel seront effacés. Pense à l'exporter d'abord.",
+    "typeName": "Tape le nom exact pour confirmer",
+    "exportFirst": "Exporter d'abord",
+    "confirm": "Supprimer",
+    "cancel": "Annuler"
+  }
+}

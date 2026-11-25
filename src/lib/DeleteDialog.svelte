@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n/index.svelte';
   import Dialog from '../ui/Dialog.svelte';
   import { invoke } from '@tauri-apps/api/core';
 
@@ -21,19 +22,18 @@
   }
 </script>
 
-<Dialog title={`Supprimer « ${name} »`} {onclose} width={520}>
+<Dialog title={t('ops.delete.title', { name })} {onclose} width={520}>
     <p>
-      Irréversible : la distribution, tous ses fichiers et son disque virtuel seront effacés.
-      Pense à l'exporter d'abord.
+      {t('ops.delete.text')}
     </p>
-    <label>Tape le nom exact pour confirmer
+    <label>{t('ops.delete.typeName')}
       <input bind:value={typed} placeholder={name} />
     </label>
     {#if error}<div class="error">{error}</div>{/if}
     <div class="foot">
-      <button onclick={onexport} disabled={busy}>Exporter d'abord</button>
-      <button class="danger" onclick={remove} disabled={busy || typed !== name}>Supprimer</button>
-      <button onclick={onclose} disabled={busy}>Annuler</button>
+      <button onclick={onexport} disabled={busy}>{t('ops.delete.exportFirst')}</button>
+      <button class="danger" onclick={remove} disabled={busy || typed !== name}>{t('ops.delete.confirm')}</button>
+      <button onclick={onclose} disabled={busy}>{t('ops.delete.cancel')}</button>
     </div>
 </Dialog>
 

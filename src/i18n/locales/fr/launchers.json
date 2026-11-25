@@ -1,0 +1,40 @@
+{
+  "title": "Lanceurs",
+  "new": "Nouveau lanceur",
+  "intro": "Un lanceur ouvre un terminal qui exécute directement une commande (claude, codex, aspire run…), dans le dossier du projet de l’affichage. Il apparaît dans « + Bloc ».",
+  "targetWindows": "PowerShell Windows",
+  "anyDistro": "toute distribution",
+  "edit": "Modifier",
+  "delete": "Supprimer",
+  "none": "Aucun lanceur.",
+  "detect": {
+    "title": "Détecter dans une distribution",
+    "distro": "Distribution",
+    "choose": "Choisir…",
+    "searching": "Recherche…",
+    "search": "Chercher Claude Code, Codex",
+    "hint": "La distribution est démarrée si besoin.",
+    "foundIn": "trouvé dans {{distro}}",
+    "add": "Ajouter",
+    "nothing": "Rien de nouveau trouvé."
+  },
+  "icon": {
+    "title": "Icône du lanceur",
+    "button": "Icône…"
+  },
+  "removeTitle": "Supprimer « {{name}} » ?",
+  "form": {
+    "editTitle": "Modifier le lanceur",
+    "newTitle": "Nouveau lanceur",
+    "name": "Nom",
+    "runIn": "Exécuter dans",
+    "targetWsl": "Une distribution WSL",
+    "distro": "Distribution",
+    "distroAny": "Celle du bloc / à choisir",
+    "command": "Commande",
+    "cwd": "Dossier de départ",
+    "cwdPlaceholder": "vide = dossier du projet de l’affichage",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  }
+}

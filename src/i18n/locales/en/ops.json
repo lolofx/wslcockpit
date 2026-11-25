@@ -1,0 +1,76 @@
+{
+  "size": {
+    "gb": "{{n}} GB",
+    "mb": "{{n}} MB"
+  },
+  "title": {
+    "export": "Export \"{{name}}\"",
+    "clone": "Clone \"{{name}}\"",
+    "convert": "Convert \"{{name}}\"",
+    "sparse": "Sparse mode for \"{{name}}\"",
+    "wslupdate": "Update WSL",
+    "create": "New distribution",
+    "import": "Import a distribution"
+  },
+  "tarFilter": "Tar archive",
+  "starting": "Starting…",
+  "cancel": "Cancel",
+  "close": "Close",
+  "browse": "Browse…",
+  "convert": {
+    "text": "Converting from WSL{{from}} to WSL{{to}}. This can take several minutes, and the distribution must be stopped. Export it first if it matters.",
+    "go": "Convert to WSL{{to}}"
+  },
+  "sparse": {
+    "text": "Sparse mode lets WSL give freed space back to the Windows disk. The distribution must be stopped.",
+    "enable": "Enable",
+    "disable": "Disable"
+  },
+  "update": {
+    "searching": "Looking for the latest version…",
+    "installed": "Installed version:",
+    "latest": "Latest version:",
+    "unknown": "unknown",
+    "unavailable": "unavailable (offline?)",
+    "upToDate": "WSL is up to date.",
+    "warning": "Updating stops all distributions and open terminals. Windows may ask for permission.",
+    "go": "Update"
+  },
+  "create": {
+    "loading": "Loading the catalog…",
+    "retry": "Retry",
+    "available": "Available distributions",
+    "weight": "Download size: not provided by WSL (often 300 MB to 1 GB).",
+    "custom": "Choose the name and install folder",
+    "name": "Name",
+    "dir": "Install folder (empty or to be created)",
+    "default": "If you choose nothing, WSL uses the catalog name and its default folder. The user is created at the first terminal.",
+    "go": "Install"
+  },
+  "form": {
+    "newName": "Name of the new distribution",
+    "namePlaceholder": "e.g. Ubuntu-test",
+    "tarSource": "Archive to import (.tar)",
+    "exportFile": "Export file (.tar)",
+    "installDir": "Install folder (empty or to be created)",
+    "exportHint": "An existing file is never overwritten. Exporting can take several minutes.",
+    "dirHint": "The folder must not contain any files.",
+    "cloneHint": "The clone goes through a temporary archive, deleted afterwards.",
+    "export": "Export",
+    "clone": "Clone",
+    "import": "Import"
+  },
+  "progress": {
+    "written": "{{size}} written",
+    "cancel": "Cancel operation"
+  },
+  "cloneSuffix": "{{name}}-copy",
+  "delete": {
+    "title": "Delete \"{{name}}\"",
+    "text": "This cannot be undone: the distribution, all its files and its virtual disk will be erased. Consider exporting it first.",
+    "typeName": "Type the exact name to confirm",
+    "exportFirst": "Export first",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  }
+}

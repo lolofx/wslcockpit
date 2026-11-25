@@ -1,14 +1,15 @@
 <script lang="ts">
   import type { BlockContext } from '../registry'
   import { app } from '../../state/app.svelte'
+  import { t, lang } from '../../i18n/index.svelte'
   let { distro }: BlockContext = $props()
   const entries = $derived(app.log.filter((e) => !e.distro || e.distro === distro))
-  const hm = (t: number) => new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const hm = (ms: number) => new Date(ms).toLocaleTimeString(lang() === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 </script>
 
 <div class="log">
   {#if entries.length === 0}
-    <p class="empty">Rien à signaler. Les actions et erreurs apparaissent ici.</p>
+    <p class="empty">{t('blocks.log.empty')}</p>
   {:else}
     <ul>
       {#each entries as e (e.id)}

@@ -7,6 +7,7 @@
   import { parseRoot } from '../model'
   import { resolveLink } from '../markdown'
   import Button from '../../ui/Button.svelte'
+  import { t } from '../../i18n/index.svelte'
 
   let { block, update, root: viewRoot }: BlockContext = $props()
   const bp = $derived(block.props as { root?: unknown; rel?: string })
@@ -27,7 +28,7 @@
     } catch (e) {
       const s = String(e)
       html = ''
-      error = s === 'BINARY' ? 'Fichier binaire.' : s === 'TOO_BIG' ? 'Fichier trop gros (plus de 1 Mio).' : s
+      error = s === 'BINARY' ? t('blocks.error.binary') : s === 'TOO_BIG' ? t('blocks.error.tooBig') : s
     }
   }
 
@@ -55,12 +56,12 @@
 
 <div class="md">
   <div class="bar">
-    <span class="t" title={rel}>{rel || 'Aperçu Markdown'}</span>
-    <Button variant="ghost" onclick={() => void load()} title="Recharger" aria-label="Recharger">⟳</Button>
+    <span class="t" title={rel}>{rel || t('workspace.type.markdown')}</span>
+    <Button variant="ghost" onclick={() => void load()} title={t('blocks.markdown.reload')} aria-label={t('blocks.markdown.reload')}>⟳</Button>
   </div>
   {#if error}<p class="err">{error}</p>{/if}
   {#if !rel}
-    <p class="dim">Ouvre un fichier .md depuis le bloc Projet (onglet Fichiers).</p>
+    <p class="dim">{t('blocks.markdown.hint')}</p>
   {/if}
   <div class="doc" bind:this={box} onclick={click} onkeydown={() => {}} role="presentation">{@html html}</div>
 </div>

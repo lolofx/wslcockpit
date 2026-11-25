@@ -1,1 +1,58 @@
-{"language":{"label":"Langue","hint":"Appliquée tout de suite, retenue pour les prochains lancements."}}
+{
+  "language": {
+    "label": "Langue",
+    "hint": "Appliquée tout de suite, retenue pour les prochains lancements."
+  },
+  "tabGlobal": "Global",
+  "back": "Retour",
+  "title": "Configuration",
+  "load": "Chargement…",
+  "save": "Enregistrer",
+  "saved": "Enregistré.",
+  "fields": {
+    "memory": {
+      "label": "Mémoire",
+      "hint": "ex. 8GB (vide = défaut)"
+    },
+    "processors": {
+      "label": "Processeurs",
+      "hint": "nombre entier ≥ 1"
+    },
+    "swap": {
+      "label": "Swap",
+      "hint": "ex. 4GB, 0 = désactivé"
+    },
+    "networkingMode": {
+      "label": "Mode réseau",
+      "hint": ""
+    },
+    "vmIdleTimeout": {
+      "label": "Arrêt de la VM inactive (ms)",
+      "hint": "-1 = jamais"
+    },
+    "systemd": {
+      "label": "systemd",
+      "hint": ""
+    },
+    "defaultUser": {
+      "label": "Utilisateur par défaut",
+      "hint": "lettres, chiffres, _ - ."
+    },
+    "automountEnabled": {
+      "label": "Montage automatique des lecteurs",
+      "hint": ""
+    }
+  },
+  "unset": "(non défini)",
+  "base": {
+    "label": "Dossier des nouvelles distributions",
+    "browse": "Parcourir…",
+    "hint": "Utilisé par création, import et clonage : chaque distro va dans dossier\\nom. Vide = %USERPROFILE%\\WSL."
+  },
+  "globalFile": "Fichier .wslconfig de ton profil Windows. Une valeur vide retire la clé.",
+  "distroFile": "Fichier /etc/wsl.conf de la distribution. Une valeur vide retire la clé.",
+  "needStart": "« {{name}} » est arrêtée. Pour lire son wsl.conf, elle doit démarrer.",
+  "startRead": "Démarrer et lire",
+  "backupNote": "Une sauvegarde horodatée de l'ancien fichier est créée à côté.",
+  "restart": "Enregistré. Redémarrage requis : lance « Tout arrêter » (wsl --shutdown) puis relance les distributions pour appliquer."
+}

@@ -1,0 +1,55 @@
+{
+  "error": {
+    "binary": "Fichier binaire.",
+    "tooBig": "Fichier trop gros (plus de 1 Mio).",
+    "gitNotFound": "git introuvable (installe git dans la distribution, ou git pour Windows).",
+    "notRepo": "Ce dossier n’est pas un dépôt git.",
+    "wslAbsent": "WSL est introuvable."
+  },
+  "log": {
+    "empty": "Rien à signaler. Les actions et erreurs apparaissent ici."
+  },
+  "state": {
+    "default": "défaut",
+    "disk": "Disque",
+    "policy": "Politique",
+    "manual": "Manuel",
+    "start": "Démarrer à l'ouverture",
+    "keepalive": "Garder en vie",
+    "notFound": "Distribution introuvable."
+  },
+  "markdown": {
+    "reload": "Recharger",
+    "hint": "Ouvre un fichier .md depuis le bloc Projet (onglet Fichiers)."
+  },
+  "project": {
+    "staged": "Indexé",
+    "changed": "Modifié",
+    "untracked": "Non suivi",
+    "noDiff": "(aucune différence)",
+    "badRoot": "Dossier non reconnu : « Distro:/chemin » ou chemin Windows.",
+    "rootIntro": "Dossier du projet :",
+    "rootPath": "un chemin",
+    "rootOr": "ou",
+    "use": "Utiliser",
+    "browse": "Parcourir…",
+    "files": "Fichiers",
+    "refresh": "Rafraîchir",
+    "change": "Changer de dossier",
+    "clean": "Rien à valider.",
+    "close": "Fermer"
+  },
+  "terminal": {
+    "settings": "Réglages",
+    "restart": "Relancer",
+    "type": "Type",
+    "modeWsl": "Shell WSL",
+    "modeDistro": "PowerShell, disque de la distro",
+    "modeProfile": "PowerShell, dossier utilisateur",
+    "linuxDir": "Dossier Linux",
+    "startDir": "Dossier de départ",
+    "none": "aucun",
+    "hint": "Ctrl+clic sur une adresse http(s) l’ouvre dans le navigateur. Dossier courant retenu : {{last}}. Les changements s’appliquent au prochain « Relancer ».",
+    "ended": "Processus terminé."
+  }
+}

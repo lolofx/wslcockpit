@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.svelte'
+
 // Remplace alert/prompt/confirm : file d'états lue par FeedbackHost.svelte.
 export type Toast = { id: number; tone: 'info' | 'success' | 'error'; text: string }
 export type Ask =
@@ -18,7 +20,7 @@ export function dismiss(id: number) {
 
 export function confirmAction(o: { title: string; message?: string; confirmLabel?: string; danger?: boolean }): Promise<boolean> {
   return new Promise((resolve) => {
-    feedback.ask = { kind: 'confirm', title: o.title, message: o.message ?? '', confirmLabel: o.confirmLabel ?? 'Confirmer', danger: o.danger ?? false, resolve }
+    feedback.ask = { kind: 'confirm', title: o.title, message: o.message ?? '', confirmLabel: o.confirmLabel ?? t('ui.confirm'), danger: o.danger ?? false, resolve }
   })
 }
 

@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.svelte'
 import { chooseDistroIcon } from '../state/icons.svelte'
 import { app, act, openTerminal, display, makeDefault, rename, type Distro } from '../state/app.svelte'
 
@@ -8,21 +9,21 @@ export function distroMenu(d: Distro): MenuItem[] {
   const running = d.state === 'running'
   const busy = app.busy !== null
   const items: MenuItem[] = [
-    { label: 'Terminal', onselect: () => openTerminal(d.name) },
-    { label: 'Terminal externe', onselect: () => void act('terminal', d.name), disabled: busy },
-    ...(running ? [{ label: 'Redémarrer', onselect: () => void act('restart', d.name), disabled: busy }] : []),
-    { label: 'Changer l’icône…', onselect: () => void chooseDistroIcon(d.name, display(d.name)) },
-    { label: 'Modifier l’alias…', onselect: () => void rename(d.name) },
-    ...(d.is_default ? [] : [{ label: 'Définir par défaut', onselect: () => void makeDefault(d.name), disabled: busy }]),
-    { label: 'Exporter…', onselect: () => (app.ops = { mode: 'export', source: d.name }), disabled: busy },
-    { label: 'Cloner…', onselect: () => (app.ops = { mode: 'clone', source: d.name }), disabled: busy },
+    { label: t('shell.menu.terminal'), onselect: () => openTerminal(d.name) },
+    { label: t('shell.menu.terminalExternal'), onselect: () => void act('terminal', d.name), disabled: busy },
+    ...(running ? [{ label: t('shell.menu.restart'), onselect: () => void act('restart', d.name), disabled: busy }] : []),
+    { label: t('shell.menu.changeIcon'), onselect: () => void chooseDistroIcon(d.name, display(d.name)) },
+    { label: t('shell.menu.editAlias'), onselect: () => void rename(d.name) },
+    ...(d.is_default ? [] : [{ label: t('shell.menu.makeDefault'), onselect: () => void makeDefault(d.name), disabled: busy }]),
+    { label: t('shell.menu.export'), onselect: () => (app.ops = { mode: 'export', source: d.name }), disabled: busy },
+    { label: t('shell.menu.clone'), onselect: () => (app.ops = { mode: 'clone', source: d.name }), disabled: busy },
     ...(running
       ? []
       : [
-          { label: `Convertir en WSL${d.version === 2 ? 1 : 2}…`, onselect: () => (app.ops = { mode: 'convert', source: d.name, version: d.version }), disabled: busy },
-          { label: 'Compacter (sparse)…', onselect: () => (app.ops = { mode: 'sparse', source: d.name }), disabled: busy },
+          { label: t('shell.menu.convert', { version: d.version === 2 ? 1 : 2 }), onselect: () => (app.ops = { mode: 'convert', source: d.name, version: d.version }), disabled: busy },
+          { label: t('shell.menu.sparse'), onselect: () => (app.ops = { mode: 'sparse', source: d.name }), disabled: busy },
         ]),
-    { label: 'Supprimer…', onselect: () => (app.deleting = d.name), danger: true, disabled: busy || d.state === 'installing' },
+    { label: t('shell.menu.delete'), onselect: () => (app.deleting = d.name), danger: true, disabled: busy || d.state === 'installing' },
   ]
   return items
 }
@@ -37,9 +38,9 @@ import { pickIcon } from '../icons/picker.svelte'
 import { invoke } from '@tauri-apps/api/core'
 
 export async function newView(go: (v: string) => void) {
-  const n = await promptText({ title: 'Nouvel affichage', message: 'Un espace libre où mettre les blocs de plusieurs distributions.', value: '' })
+  const n = await promptText({ title: t('shell.view.newTitle'), message: t('shell.view.newMessage'), value: '' })
   if (n === null) return
-  go(viewKey(createView(n)))
+  go(viewKey(createView(n.trim() || t('shell.view.defaultName'))))
 }
 
 export function viewMenu(id: string, go: (v: string) => void): MenuItem[] {
@@ -48,42 +49,42 @@ export function viewMenu(id: string, go: (v: string) => void): MenuItem[] {
   const i = layouts.doc.views.findIndex((x) => x.id === id)
   return [
     {
-      label: 'Renommer…',
+      label: t('shell.view.rename'),
       onselect: async () => {
-        const n = await promptText({ title: 'Nom de l’affichage', value: v.name })
+        const n = await promptText({ title: t('shell.view.nameTitle'), value: v.name })
         if (n?.trim()) patchView(id, { name: n })
       },
     },
     {
-      label: 'Changer l’icône…',
+      label: t('shell.menu.changeIcon'),
       onselect: async () => {
-        const r = await pickIcon({ title: `Icône de « ${v.name} »`, label: v.name, current: v.icon ?? null })
+        const r = await pickIcon({ title: t('shell.view.iconTitle', { name: v.name }), label: v.name, current: v.icon ?? null })
         if (r !== undefined) patchView(id, { icon: r ?? undefined })
       },
     },
     {
-      label: v.root ? `Dossier du projet : ${v.root.distro ? v.root.distro + ':' : ''}${v.root.path}…` : 'Dossier du projet…',
+      label: v.root ? t('shell.view.rootWith', { root: `${v.root.distro ? v.root.distro + ':' : ''}${v.root.path}` }) : t('shell.view.root'),
       onselect: async () => {
-        const t = await promptText({
-          title: 'Dossier du projet',
-          message: 'Debian:/home/moi/projet, un chemin \\\\wsl.localhost\\… ou C:\\Dev\\projet. Vide = aucun. Les blocs Projet de l’affichage l’utilisent.',
+        const txt = await promptText({
+          title: t('shell.view.rootTitle'),
+          message: t('shell.view.rootMessage'),
           value: v.root ? (v.root.distro ? `${v.root.distro}:${v.root.path}` : v.root.path) : '',
         })
-        if (t === null) return
-        if (!t.trim()) return patchView(id, { root: undefined })
-        const r = await invoke<{ distro: string; path: string } | null>('project_parse', { text: t })
+        if (txt === null) return
+        if (!txt.trim()) return patchView(id, { root: undefined })
+        const r = await invoke<{ distro: string; path: string } | null>('project_parse', { text: txt })
         if (r) patchView(id, { root: r })
-        else toast('Dossier non reconnu : utilise « Distro:/chemin » ou un chemin Windows.', 'error')
+        else toast(t('shell.view.rootUnknown'), 'error')
       },
     },
-    { label: 'Dupliquer', onselect: () => { const c = copyView(id); if (c) go(viewKey(c)) } },
-    { label: '▲ Monter', onselect: () => shiftView(id, -1), disabled: i <= 0 },
-    { label: '▼ Descendre', onselect: () => shiftView(id, 1), disabled: i >= layouts.doc.views.length - 1 },
+    { label: t('shell.view.duplicate'), onselect: () => { const c = copyView(id); if (c) go(viewKey(c)) } },
+    { label: t('shell.view.up'), onselect: () => shiftView(id, -1), disabled: i <= 0 },
+    { label: t('shell.view.down'), onselect: () => shiftView(id, 1), disabled: i >= layouts.doc.views.length - 1 },
     {
-      label: 'Supprimer…',
+      label: t('shell.view.delete'),
       danger: true,
       onselect: async () => {
-        if (!(await confirmAction({ title: `Supprimer l’affichage « ${v.name} » ?`, message: 'Ses terminaux sont fermés. Les distributions ne sont pas touchées.', confirmLabel: 'Supprimer', danger: true }))) return
+        if (!(await confirmAction({ title: t('shell.view.deleteTitle', { name: v.name }), message: t('shell.view.deleteMessage'), confirmLabel: t('shell.view.deleteConfirm'), danger: true }))) return
         for (const s of layoutFor(viewKey(id)).stacks) for (const b of s.blocks) if (b.type === 'terminal') void invoke('pty_close', { id: b.id }).catch(() => {})
         go('overview')
         deleteView(id)

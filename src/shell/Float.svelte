@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n/index.svelte'
   // Fenêtre d'un bloc détaché. À sa fermeture (croix ou « Rattacher »), le bloc retourne dans la fenêtre principale.
   import { onMount } from 'svelte'
   import { emit } from '@tauri-apps/api/event'
@@ -29,7 +30,7 @@
 <div class="float">
   <header>
     <span>{d?.label ?? block.type} · {distro}</span>
-    <Button onclick={() => getCurrentWindow().close()}>Rattacher</Button>
+    <Button onclick={() => getCurrentWindow().close()}>{t('shell.float.reattach')}</Button>
   </header>
   <div class="body">
     {#if d}

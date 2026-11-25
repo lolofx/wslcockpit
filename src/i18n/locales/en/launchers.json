@@ -1,0 +1,40 @@
+{
+  "title": "Launchers",
+  "new": "New launcher",
+  "intro": "A launcher opens a terminal that runs a command directly (claude, codex, aspire run…), in the project folder of the current view. It shows up in \"+ Block\".",
+  "targetWindows": "Windows PowerShell",
+  "anyDistro": "any distribution",
+  "edit": "Edit",
+  "delete": "Delete",
+  "none": "No launchers.",
+  "detect": {
+    "title": "Detect in a distribution",
+    "distro": "Distribution",
+    "choose": "Choose…",
+    "searching": "Searching…",
+    "search": "Look for Claude Code, Codex",
+    "hint": "The distribution is started if needed.",
+    "foundIn": "found in {{distro}}",
+    "add": "Add",
+    "nothing": "Nothing new found."
+  },
+  "icon": {
+    "title": "Launcher icon",
+    "button": "Icon…"
+  },
+  "removeTitle": "Delete \"{{name}}\"?",
+  "form": {
+    "editTitle": "Edit launcher",
+    "newTitle": "New launcher",
+    "name": "Name",
+    "runIn": "Run in",
+    "targetWsl": "A WSL distribution",
+    "distro": "Distribution",
+    "distroAny": "The block's one / ask",
+    "command": "Command",
+    "cwd": "Start folder",
+    "cwdPlaceholder": "empty = project folder of the current view",
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n/index.svelte'
   import { invoke } from '@tauri-apps/api/core'
   import { app, nav, display, find, act, size, stateLabel, toggleAutostart, shutdownAll, refresh, reloadAliases } from '../state/app.svelte'
   import { buildCommands } from './commands'
@@ -44,21 +45,21 @@
   }
 
   const globalMenu = $derived<MenuItem[]>([
-    { label: 'Nouvelle distribution…', onselect: () => (app.ops = { mode: 'create', source: '' }) },
-    { label: 'Importer une distribution…', onselect: () => (app.ops = { mode: 'import', source: '' }) },
-    { label: 'Mettre à jour WSL…', onselect: () => (app.ops = { mode: 'wslupdate', source: '' }) },
-    { label: 'Configuration…', onselect: () => go('settings') },
-    { label: `Démarrer avec Windows : ${app.autostart ? 'oui' : 'non'}`, onselect: () => void toggleAutostart() },
-    { label: 'Tout arrêter…', onselect: () => void shutdownAll(), danger: true, disabled: app.busy !== null },
+    { label: t('shell.global.create'), onselect: () => (app.ops = { mode: 'create', source: '' }) },
+    { label: t('shell.global.import'), onselect: () => (app.ops = { mode: 'import', source: '' }) },
+    { label: t('shell.global.wslUpdate'), onselect: () => (app.ops = { mode: 'wslupdate', source: '' }) },
+    { label: t('shell.global.settings'), onselect: () => go('settings') },
+    { label: app.autostart ? t('shell.global.autostartOn') : t('shell.global.autostartOff'), onselect: () => void toggleAutostart() },
+    { label: t('shell.global.shutdownAll'), onselect: () => void shutdownAll(), danger: true, disabled: app.busy !== null },
   ])
 </script>
 
 <svelte:window onkeydown={key} />
 
 <div class="shell">
-  <nav class="rail" class:open={drawer} aria-label="Navigation">
-    <button class="item" class:on={view === 'overview'} title="Vue d’ensemble" onclick={() => go('overview')}>
-      <span class="ic">▦</span><span class="lb">Vue d’ensemble</span>
+  <nav class="rail" class:open={drawer} aria-label={t('shell.nav.label')}>
+    <button class="item" class:on={view === 'overview'} title={t('shell.nav.overview')} onclick={() => go('overview')}>
+      <span class="ic">▦</span><span class="lb">{t('shell.nav.overview')}</span>
     </button>
     <div class="sep"></div>
     <div class="list">
@@ -77,52 +78,52 @@
           <span class="lb">{v.name}</span>
         </button>
       {/each}
-      <button class="item" title="Nouvel affichage" aria-label="Nouvel affichage" onclick={() => void newView(go)}>
-        <span class="ic plus">+</span><span class="lb">Nouvel affichage</span>
+      <button class="item" title={t('shell.nav.newView')} aria-label={t('shell.nav.newView')} onclick={() => void newView(go)}>
+        <span class="ic plus">+</span><span class="lb">{t('shell.nav.newView')}</span>
       </button>
     </div>
-    <button class="item" class:on={view === 'settings'} title="Configuration" onclick={() => go('settings')}>
-      <span class="ic">⚙</span><span class="lb">Configuration</span>
+    <button class="item" class:on={view === 'settings'} title={t('shell.nav.settings')} onclick={() => go('settings')}>
+      <span class="ic">⚙</span><span class="lb">{t('shell.nav.settings')}</span>
     </button>
   </nav>
-  {#if drawer}<button class="scrim" aria-label="Fermer le menu" onclick={() => (drawer = false)}></button>{/if}
+  {#if drawer}<button class="scrim" aria-label={t('shell.nav.closeMenu')} onclick={() => (drawer = false)}></button>{/if}
 
   <div class="main">
     <header class="top">
-      <button class="hamb" aria-label="Menu" onclick={() => (drawer = !drawer)}>☰</button>
+      <button class="hamb" aria-label={t('shell.nav.menu')} onclick={() => (drawer = !drawer)}>☰</button>
       {#if current}
         <h1>{display(current.name)}</h1>
         <Badge tone={current.state === 'running' ? 'success' : 'neutral'}>{stateLabel(current.state)}</Badge>
         <div class="grow"></div>
         {#if current.state === 'running'}
-          <Button onclick={() => act('stop', current.name)} disabled={app.busy !== null}>Arrêter</Button>
+          <Button onclick={() => act('stop', current.name)} disabled={app.busy !== null}>{t('shell.top.stop')}</Button>
         {:else}
-          <Button variant="primary" onclick={() => act('start', current.name)} disabled={app.busy !== null}>Démarrer</Button>
+          <Button variant="primary" onclick={() => act('start', current.name)} disabled={app.busy !== null}>{t('shell.top.start')}</Button>
         {/if}
-        <Menu items={distroMenu(current)} label="Actions de {display(current.name)}" />
+        <Menu items={distroMenu(current)} label={t('shell.top.actionsOf', { name: display(current.name) })} />
       {:else if curView}
         <Icon spec={curView.icon} label={curView.name} size={24} />
         <h1>{curView.name}</h1>
         <div class="grow"></div>
-        <Menu items={viewMenu(curView.id, go)} label="Actions de l’affichage" />
+        <Menu items={viewMenu(curView.id, go)} label={t('shell.top.viewActions')} />
       {:else}
-        <h1>{view === 'settings' ? 'Configuration' : 'Vue d’ensemble'}</h1>
+        <h1>{view === 'settings' ? t('shell.nav.settings') : t('shell.nav.overview')}</h1>
         <div class="grow"></div>
-        <Menu items={globalMenu} label="Actions générales" />
+        <Menu items={globalMenu} label={t('shell.top.globalActions')} />
       {/if}
-      <Button variant="ghost" onclick={() => { bell = true; app.unread = 0 }} title="Notifications" aria-label="Notifications">🔔{#if app.unread > 0}<span class="n">{app.unread > 99 ? '99+' : app.unread}</span>{/if}</Button>
-      <Button variant="ghost" onclick={() => (palette = true)} title="Palette de commandes (Ctrl+K)">Ctrl K</Button>
+      <Button variant="ghost" onclick={() => { bell = true; app.unread = 0 }} title={t('shell.top.notifications')} aria-label={t('shell.top.notifications')}>🔔{#if app.unread > 0}<span class="n">{app.unread > 99 ? '99+' : app.unread}</span>{/if}</Button>
+      <Button variant="ghost" onclick={() => (palette = true)} title={t('shell.top.palette')}>Ctrl K</Button>
     </header>
 
     {#if app.update}
       <div class="banner info">
-        Nouvelle version {app.update.version} disponible.
-        <button class="lnk" onclick={() => invoke('open_url', { url: app.update!.url })}>Voir la release</button>
+        {t('shell.banner.update', { version: app.update.version })}
+        <button class="lnk" onclick={() => invoke('open_url', { url: app.update!.url })}>{t('shell.banner.release')}</button>
       </div>
     {/if}
     {#if absent}
       <div class="banner err">
-        <strong>WSL n'est pas installé ou pas activé.</strong> Ouvre PowerShell en administrateur et lance <code>wsl --install</code>, puis redémarre le PC.
+        <strong>{t('shell.banner.wslAbsentTitle')}</strong> {t('shell.banner.wslAbsentBefore')} <code>wsl --install</code>{t('shell.banner.wslAbsentAfter')}
       </div>
     {:else if app.error}
       <div class="banner err">{app.error}</div>
@@ -141,9 +142,9 @@
     </section>
 
     <footer class="status">
-      <span>{running}/{app.distros.length} en marche</span>
+      <span>{t('shell.status.running', { running, total: app.distros.length })}</span>
       {#if app.mon}<span>RAM {size(app.mon.ram_bytes)}{#if app.mon.cpu_percent !== null} · CPU {app.mon.cpu_percent.toFixed(0)} %{/if}</span>{/if}
-      {#if app.opStage}<span>{app.opStage}</span>{:else if app.busy}<span>Opération en cours…</span>{/if}
+      {#if app.opStage}<span>{app.opStage}</span>{:else if app.busy}<span>{t('shell.status.working')}</span>{/if}
     </footer>
   </div>
 </div>
