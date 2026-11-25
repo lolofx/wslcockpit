@@ -186,3 +186,35 @@ test('markdown : liens', () => {
   assert.equal(dirOf('a/b/c.md'), 'a/b')
   assert.equal(dirOf('c.md'), '')
 })
+
+import { dockBlock, undockBlock, parseViewLayout } from './model.ts'
+test('dock : mettre de côté, remettre, conserver à travers les opérations', () => {
+  let l = defaultLayout()
+  const all = l.stacks.flatMap((s) => s.blocks)
+  const id = all[0].id
+  l = dockBlock(l, id)
+  assert.equal(l.dock?.length, 1)
+  assert.equal(l.stacks.flatMap((s) => s.blocks).length, all.length - 1)
+  l = addBlock(l, makeBlock('log'))
+  assert.equal(l.dock?.length, 1, 'ajouter un bloc garde le dock')
+  l = moveBlock(l, l.stacks[0].blocks[0].id, { kind: 'new-stack', at: 0 })
+  assert.equal(l.dock?.length, 1, 'déplacer garde le dock')
+  assert.equal(parseLayout(JSON.parse(JSON.stringify(l))).dock?.length, 1)
+  const back = undockBlock(l, id)
+  assert.equal(back.dock, undefined)
+  assert.ok(back.stacks.flatMap((s) => s.blocks).some((b) => b.id === id))
+  assert.equal(removeBlock(dockBlock(back, id), id).dock, undefined)
+})
+
+test('dock : tout mis de côté reste lisible, un affichage invalide devient vide', () => {
+  let l = defaultLayout()
+  for (const b of l.stacks.flatMap((s) => s.blocks)) l = dockBlock(l, b.id)
+  assert.equal(l.stacks.length, 0)
+  assert.equal(l.dock?.length, 4)
+  const r = parseLayout(JSON.parse(JSON.stringify(l)))
+  assert.equal(r.stacks.length, 0)
+  assert.equal(r.dock?.length, 4)
+  assert.equal(parseViewLayout({ version: 2 }).stacks.length, 0)
+  assert.equal(parseViewLayout(null).dock, undefined)
+  assert.equal(parseViewLayout({ version: 1, stacks: [{ id: 1, blocks: [] }] }).stacks.length, 0)
+})

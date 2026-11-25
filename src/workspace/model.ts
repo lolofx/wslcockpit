@@ -11,7 +11,8 @@ export type Block = {
   collapsed?: boolean
 }
 export type Stack = { id: string; size: number; blocks: Block[] }
-export type Layout = { version: 1; stacks: Stack[] }
+// `dock` : blocs mis de côté (barre de droite), hors des piles ; leurs terminaux continuent de tourner.
+export type Layout = { version: 1; stacks: Stack[]; dock?: Block[] }
 
 export const MAX_STACKS = 4
 export const MIN_SIZE = 0.1
@@ -31,7 +32,7 @@ export function normalize(layout: Layout): Layout {
   const stacks = layout.stacks
     .map((s) => ({ ...s, blocks: equalizeIfInvalid(s.blocks) }))
     .filter((s) => s.blocks.length > 0)
-  return { version: 1, stacks: equalizeIfInvalid(stacks) }
+  return { version: 1, stacks: equalizeIfInvalid(stacks), ...(layout.dock?.length ? { dock: layout.dock } : {}) }
 }
 
 function equalizeIfInvalid<T extends { size: number }>(items: T[]): T[] {
@@ -98,19 +99,36 @@ export function moveBlock(layout: Layout, blockId: string, target: DropTarget): 
     stacks = stacks.slice()
     stacks.splice(at, 0, fresh)
   }
-  return normalize({ version: 1, stacks })
+  return normalize({ ...layout, stacks })
 }
 
 export function addBlock(layout: Layout, block: Block, stackIndex = layout.stacks.length - 1): Layout {
-  if (layout.stacks.length === 0) return normalize({ version: 1, stacks: [{ id: uid('s'), size: 1, blocks: [block] }] })
+  if (layout.stacks.length === 0) return normalize({ ...layout, stacks: [{ id: uid('s'), size: 1, blocks: [block] }] })
   const i = Math.min(Math.max(stackIndex, 0), layout.stacks.length - 1)
   const stacks = layout.stacks.map((s, k) => (k === i ? { ...s, blocks: equalize([...s.blocks, block]) } : s))
-  return normalize({ version: 1, stacks })
+  return normalize({ ...layout, stacks })
 }
 
 export function removeBlock(layout: Layout, blockId: string): Layout {
   const stacks = layout.stacks.map((s) => ({ ...s, blocks: equalize(s.blocks.filter((b) => b.id !== blockId)) }))
-  return normalize({ version: 1, stacks })
+  const dock = (layout.dock ?? []).filter((b) => b.id !== blockId)
+  return normalize({ version: 1, stacks, dock })
+}
+
+// Met un bloc de côté (barre de droite) ; le remet dans la dernière pile.
+export function dockBlock(layout: Layout, blockId: string): Layout {
+  const at = findBlock(layout, blockId)
+  if (!at) return layout
+  const block = { ...layout.stacks[at.stack].blocks[at.index], size: 1 }
+  const rest = removeBlock(layout, blockId)
+  return normalize({ ...rest, dock: [...(rest.dock ?? []), block] })
+}
+
+export function undockBlock(layout: Layout, blockId: string): Layout {
+  const block = (layout.dock ?? []).find((b) => b.id === blockId)
+  if (!block) return layout
+  const without = normalize({ ...layout, stacks: layout.stacks, dock: (layout.dock ?? []).filter((b) => b.id !== blockId) })
+  return addBlock(without, block)
 }
 
 export function setBlockProps(layout: Layout, blockId: string, props: Record<string, unknown>): Layout {
@@ -120,33 +138,36 @@ export function setBlockProps(layout: Layout, blockId: string, props: Record<str
       ...s,
       blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, props: { ...b.props, ...props } } : b)),
     })),
+    ...(layout.dock ? { dock: layout.dock.map((b) => (b.id === blockId ? { ...b, props: { ...b.props, ...props } } : b)) } : {}),
   }
 }
 
-// Lecture tolérante : toute disposition invalide ou inconnue retombe sur le défaut (jamais de plantage).
-export function parseLayout(raw: unknown): Layout {
+// Lecture tolérante : null si la disposition est invalide ou inconnue.
+function tryParseLayout(raw: unknown): Layout | null {
   try {
     const l = raw as Layout
-    if (l?.version !== 1 || !Array.isArray(l.stacks)) return defaultLayout()
-    const ok = l.stacks.every(
-      (s) => typeof s.id === 'string' && Array.isArray(s.blocks) && s.blocks.every((b) => typeof b.id === 'string' && typeof b.type === 'string'),
-    )
-    if (!ok) return defaultLayout()
-    const n = normalize({ ...l, stacks: l.stacks.slice(0, MAX_STACKS).map((s) => ({ ...s, blocks: s.blocks.map((b) => ({ ...b, props: b.props ?? {} })) })) })
-    return n.stacks.length ? n : defaultLayout()
+    if (l?.version !== 1 || !Array.isArray(l.stacks)) return null
+    const valid = (b: Block) => b && typeof b.id === 'string' && typeof b.type === 'string'
+    const ok = l.stacks.every((s) => typeof s.id === 'string' && Array.isArray(s.blocks) && s.blocks.every(valid))
+    if (!ok) return null
+    const fix = (b: Block): Block => ({ ...b, props: b.props ?? {}, size: b.size > 0 ? b.size : 1 })
+    const dock = Array.isArray(l.dock) ? l.dock.filter(valid).map(fix) : []
+    const n = normalize({ version: 1, stacks: l.stacks.slice(0, MAX_STACKS).map((s) => ({ ...s, blocks: s.blocks.map(fix) })), dock })
+    return n.stacks.length || dock.length ? n : null
   } catch {
-    return defaultLayout()
+    return null
   }
 }
+
+// Une disposition invalide retombe sur le défaut (jamais de plantage).
+export const parseLayout = (raw: unknown): Layout => tryParseLayout(raw) ?? defaultLayout()
 
 // Un affichage peut être vide (pas de disposition par défaut : ses blocs doivent nommer une distro).
 export const emptyLayout = (): Layout => ({ version: 1, stacks: [] })
 export function parseViewLayout(raw: unknown): Layout {
   const l = raw as Layout | null
-  if (l?.version === 1 && Array.isArray(l.stacks) && l.stacks.length === 0) return emptyLayout()
-  const p = parseLayout(raw)
-  // parseLayout retombe sur le défaut si invalide : pour un affichage, on préfère vide.
-  return JSON.stringify(p) === JSON.stringify(parseLayout(null)) ? emptyLayout() : p
+  if (l?.version === 1 && Array.isArray(l.stacks) && l.stacks.length === 0 && !l.dock?.length) return emptyLayout()
+  return tryParseLayout(raw) ?? emptyLayout()
 }
 
 // --- Document complet (layouts.json) : une disposition courante par distro + des dispositions nommées.
@@ -201,6 +222,7 @@ export function cloneLayout(l: Layout): Layout {
       id: uid('s'),
       blocks: s.blocks.map((b) => ({ ...b, id: uid('b'), props: structuredClone(b.props) })),
     })),
+    ...(l.dock?.length ? { dock: l.dock.map((b) => ({ ...b, id: uid('b'), props: structuredClone(b.props) })) } : {}),
   }
 }
 
