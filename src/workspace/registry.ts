@@ -14,18 +14,20 @@ export type BlockContext = { distro: string; block: Block; update: (props: Recor
 export type BlockDef = {
   type: string
   label: string
+  icon: string // symbole Lucide (src/icons/data.ts) pour la barre des blocs en attente
   component: Component<BlockContext>
   presets: { label: string; props: Record<string, unknown> }[]
 }
 
 export const registry: BlockDef[] = [
-  { type: 'state', label: 'État', component: StateBlock, presets: [{ label: 'État', props: {} }] },
-  { type: 'config', label: 'Configuration', component: ConfigBlock, presets: [{ label: 'Configuration', props: {} }] },
-  { type: 'log', label: 'Journal', component: LogBlock, presets: [{ label: 'Journal', props: {} }] },
-  { type: 'project', label: 'Projet', component: ProjectBlock, presets: [{ label: 'Projet : git et fichiers', props: {} }] },
-  { type: 'markdown', label: 'Aperçu Markdown', component: MarkdownBlock, presets: [{ label: 'Aperçu Markdown', props: {} }] },
+  { type: 'state', icon: 'layout-dashboard', label: 'État', component: StateBlock, presets: [{ label: 'État', props: {} }] },
+  { type: 'config', icon: 'settings', label: 'Configuration', component: ConfigBlock, presets: [{ label: 'Configuration', props: {} }] },
+  { type: 'log', icon: 'layers', label: 'Journal', component: LogBlock, presets: [{ label: 'Journal', props: {} }] },
+  { type: 'project', icon: 'folder-git-2', label: 'Projet', component: ProjectBlock, presets: [{ label: 'Projet : git et fichiers', props: {} }] },
+  { type: 'markdown', icon: 'book-open', label: 'Aperçu Markdown', component: MarkdownBlock, presets: [{ label: 'Aperçu Markdown', props: {} }] },
   {
     type: 'terminal',
+    icon: 'terminal',
     label: 'Terminal',
     component: TerminalBlock,
     presets: [

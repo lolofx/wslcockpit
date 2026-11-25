@@ -4,10 +4,11 @@
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
   import {
     defaultLayout, emptyLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, setBlockProps,
-    findBlock, MAX_STACKS, blockDistro, type ProjectRoot, type Layout, type DropTarget, type Block,
+    findBlock, dockBlock, undockBlock, MAX_STACKS, blockDistro, type ProjectRoot, type Layout, type DropTarget, type Block,
   } from './model'
   import { registry, def } from './registry'
   import { app, display } from '../state/app.svelte'
+  import Icon from '../icons/Icon.svelte'
   import { layouts, layoutFor, setLayout, saveAsPreset, removePreset, presetLayout } from '../state/layouts.svelte'
   import { promptText, confirmAction } from '../ui/feedback.svelte'
   import Menu from '../ui/Menu.svelte'
@@ -42,7 +43,7 @@
   let prevFor = ''
   $effect(() => {
     const snap = $state.snapshot(layout)
-    const ids = new Set(snap.stacks.flatMap((s) => s.blocks).filter((b) => b.type === 'terminal').map((b) => b.id))
+    const ids = new Set([...snap.stacks.flatMap((s) => s.blocks), ...(snap.dock ?? [])].filter((b) => b.type === 'terminal').map((b) => b.id))
     untrack(() => {
       if (prevFor === loadedFor) {
         for (const t of prevTerms) if (!ids.has(t) && !keep.delete(t)) void invoke('pty_close', { id: t }).catch(() => {})
@@ -230,6 +231,7 @@
     { label: '▶ Pile suivante', onselect: () => shift(b.id, 'right') },
     { label: '▲ Monter', onselect: () => shift(b.id, 'up') },
     { label: '▼ Descendre', onselect: () => shift(b.id, 'down') },
+    { label: '⇥ Mettre de côté', onselect: () => (layout = dockBlock(layout, b.id)) },
     { label: '⧉ Détacher dans une fenêtre', onselect: () => detach(b) },
     { label: '✕ Fermer', danger: true, onselect: () => (layout = removeBlock(layout, b.id)) },
   ]
@@ -240,6 +242,7 @@
   <Menu items={layoutItems} label="Dispositions">{#snippet trigger()}Dispositions{/snippet}</Menu>
 </div>
 
+<div class="area">
 <div class="ws" bind:this={root}>
   {#each layout.stacks as stack, si (stack.id)}
     {#if si > 0}
@@ -272,12 +275,22 @@
       {/each}
     </section>
   {/each}
-  {#if layout.stacks.length === 0}
+  {#if layout.stacks.length === 0 && !layout.dock?.length}
     <p class="empty">Affichage vide. « + Bloc » ajoute un terminal, un journal… de n’importe quelle distribution.</p>
   {/if}
   {#if drag?.ind}
     <div class="ind" style:left="{drag.ind.l}px" style:top="{drag.ind.t}px" style:width="{drag.ind.w}px" style:height="{drag.ind.h}px"></div>
   {/if}
+</div>
+{#if layout.dock?.length}
+  <aside class="dock" aria-label="Blocs mis de côté">
+    {#each layout.dock as b (b.id)}
+      <button class="dk" title="{titleOf(b.type, b.props)} : remettre" aria-label="Remettre {titleOf(b.type, b.props)}" onclick={() => (layout = undockBlock(layout, b.id))}>
+        <Icon spec={{ kind: 'symbol', value: def(b.type)?.icon ?? 'box' }} size={18} />
+      </button>
+    {/each}
+  </aside>
+{/if}
 </div>
 
 {#if drag}
@@ -291,6 +304,10 @@
   .bar { display: flex; gap: var(--sp-2); padding: var(--sp-1) var(--sp-3); border-bottom: 1px solid var(--border); background: var(--surface-1); }
   .pad { padding: var(--sp-3); color: var(--text-dim); }
   .empty { margin: auto; color: var(--text-dim); text-align: center; padding: var(--sp-4); }
+  .area { display: flex; flex: 1; min-height: 0; min-width: 0; }
+  .dock { flex: none; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2) var(--sp-1); border-left: 1px solid var(--border); background: var(--surface-1); overflow-y: auto; }
+  .dk { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .dk:hover, .dk:focus-visible { border-color: var(--accent); outline: none; }
   .ws { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; padding: 2px; }
   .stack { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .block { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius); margin: 2px; background: var(--surface-1); }
@@ -305,6 +322,8 @@
   .ind { position: absolute; background: var(--accent); border-radius: 2px; pointer-events: none; opacity: 0.8; z-index: 5; }
   .ghost { position: fixed; z-index: 100; pointer-events: none; padding: var(--sp-2) var(--sp-4); min-width: 9rem; border: 1px solid var(--accent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 22%, var(--surface-1)); opacity: 0.7; font-size: var(--fs-sm); font-weight: 600; box-shadow: var(--shadow); }
   @media (max-width: 700px) {
+    .area { flex-direction: column; }
+    .dock { flex-direction: row; border-left: 0; border-top: 1px solid var(--border); overflow-x: auto; }
     .ws { flex-direction: column; overflow: auto; }
     .stack { flex: none !important; }
     .block { flex: none !important; min-height: 14rem; }
