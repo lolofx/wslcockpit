@@ -57,9 +57,11 @@
 <style>
   .menu { position: relative; display: inline-block; }
   .trigger { font: inherit; padding: var(--sp-1) var(--sp-2); border-radius: var(--radius); border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer; }
-  .trigger:hover { background: var(--surface-2); }
+  .trigger { transition: background var(--dur); }
+  .trigger:hover { background: var(--surface-3); }
   .trigger:focus-visible { outline: none; box-shadow: var(--focus); }
   .pop { position: fixed; z-index: 50; max-height: calc(100vh - 16px); overflow-y: auto; min-width: 12rem; display: grid; padding: var(--sp-1); background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .pop { animation: pop-in 120ms var(--ease); }
   .pop button { font: inherit; font-size: var(--fs-sm); text-align: left; padding: var(--sp-2) var(--sp-3); border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); cursor: pointer; }
   .pop button:hover:not(:disabled), .pop button:focus-visible { background: var(--surface-2); outline: none; }
   .pop button:disabled { opacity: 0.45; cursor: default; }

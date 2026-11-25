@@ -25,7 +25,7 @@
 
 <style>
   ul { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-2); max-height: 50vh; overflow: auto; }
-  li { display: flex; gap: var(--sp-3); border-left: 3px solid var(--border); padding-left: var(--sp-2); font-size: var(--fs-sm); }
+  li { display: flex; gap: var(--sp-3); border: 1px solid var(--border); border-left: 3px solid var(--border); border-radius: var(--radius); background: var(--surface-2); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); }
   li.success { border-color: var(--success); }
   li.error { border-color: var(--danger); }
   time { flex: none; color: var(--text-dim); }

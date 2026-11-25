@@ -15,6 +15,8 @@
   import DeleteDialog from '../lib/DeleteDialog.svelte'
   import Button from '../ui/Button.svelte'
   import LaunchersPanel from '../lib/LaunchersPanel.svelte'
+  import { flip } from 'svelte/animate'
+  import { scale } from 'svelte/transition'
   import Icon from '../icons/Icon.svelte'
   import { distroIcon } from '../state/icons.svelte'
   import Menu from '../ui/Menu.svelte'
@@ -64,7 +66,7 @@
     <div class="sep"></div>
     <div class="list">
       {#each app.distros as d (d.name)}
-        <button class="item" class:on={view === d.name} title={display(d.name)} onclick={() => go(d.name)}>
+        <button class="item" animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.7 }} class:on={view === d.name} title={display(d.name)} onclick={() => go(d.name)}>
           <span class="ic"><Icon spec={distroIcon(d.name)} label={display(d.name)} size={26} /><i class="dot" class:run={d.state === 'running'}></i></span>
           <span class="lb">{display(d.name)}</span>
         </button>
@@ -73,7 +75,7 @@
     <div class="sep"></div>
     <div class="list views">
       {#each layouts.doc.views as v (v.id)}
-        <button class="item" class:on={view === viewKey(v.id)} title={v.name} onclick={() => go(viewKey(v.id))}>
+        <button class="item" animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.7 }} class:on={view === viewKey(v.id)} title={v.name} onclick={() => go(viewKey(v.id))}>
           <span class="ic"><Icon spec={v.icon} label={v.name} size={26} /></span>
           <span class="lb">{v.name}</span>
         </button>
@@ -165,17 +167,17 @@
 
 <style>
   .shell { display: flex; height: 100vh; min-width: 0; }
-  .rail { flex: none; width: 3.6rem; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); background: var(--surface-1); border-right: 1px solid var(--border); overflow: hidden; }
+  .rail { flex: none; width: 3.6rem; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); margin: 2px 0 2px 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
   .list { flex: 1; display: flex; flex-direction: column; gap: var(--sp-1); overflow-y: auto; overflow-x: hidden; }
   .list.views { flex: none; max-height: 40%; }
   .plus { font-size: 1.3rem; color: var(--text-dim); }
   .sep { height: 1px; background: var(--border); margin: var(--sp-1) 0; }
-  .item { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text); padding: var(--sp-1); cursor: pointer; font: inherit; text-align: left; }
-  .item:hover { background: var(--surface-2); }
+  .item { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text); padding: var(--sp-1); cursor: pointer; font: inherit; text-align: left; transition: background var(--dur), border-color var(--dur), color var(--dur); }
+  .item:hover { background: var(--surface-3); }
   .item:focus-visible { outline: none; box-shadow: var(--focus); }
-  .item.on { background: var(--surface-3); border-color: var(--accent); }
+  .item.on { background: var(--tint); border-color: var(--accent); color: var(--accent); }
   .ic { position: relative; flex: none; width: 2.2rem; height: 2.2rem; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 600; }
-  .dot { position: absolute; right: 2px; bottom: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); border: 2px solid var(--surface-1); box-sizing: content-box; }
+  .dot { transition: background var(--dur); position: absolute; right: 2px; bottom: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); border: 2px solid var(--surface-2); box-sizing: content-box; }
   .dot.run { background: var(--success); }
   .lb { display: none; font-size: var(--fs-sm); }
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }

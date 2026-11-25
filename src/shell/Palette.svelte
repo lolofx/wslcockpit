@@ -35,11 +35,13 @@
 </div>
 
 <style>
-  .overlay { position: fixed; inset: 0; z-index: 150; background: var(--overlay); display: flex; justify-content: center; align-items: flex-start; padding: 12vh var(--sp-4) 0; }
+  .overlay { position: fixed; inset: 0; z-index: 150; background: var(--overlay); display: flex; justify-content: center; align-items: flex-start; padding: 12vh var(--sp-4) 0; animation: fade-in 100ms ease; }
+  .pal { animation: pop-in 140ms var(--ease); }
   .pal { width: min(560px, 100%); background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
   input { width: 100%; box-sizing: border-box; font: inherit; padding: var(--sp-3) var(--sp-4); border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); outline: none; }
   ul { list-style: none; margin: 0; padding: var(--sp-1); max-height: 50vh; overflow: auto; }
   li button { width: 100%; text-align: left; font: inherit; font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-3); border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); cursor: pointer; }
-  li button.sel { background: var(--surface-3); }
+  li button.sel { background: var(--tint); color: var(--accent); }
+  li button { transition: background var(--dur); }
   .none { padding: var(--sp-3); color: var(--text-dim); font-size: var(--fs-sm); }
 </style>
