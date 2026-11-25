@@ -4,6 +4,8 @@
   import Button from '../ui/Button.svelte'
   import Badge from '../ui/Badge.svelte'
   import Menu from '../ui/Menu.svelte'
+  import Icon from '../icons/Icon.svelte'
+  import { distroIcon } from '../state/icons.svelte'
 
   let { open }: { open: (name: string) => void } = $props()
 </script>
@@ -19,6 +21,7 @@
       {@const running = d.state === 'running'}
       <article class="card">
         <button class="name" onclick={() => open(d.name)} title="Ouvrir l’espace de travail">
+          <Icon spec={distroIcon(d.name)} label={display(d.name)} size={26} />
           <span class="dot" class:on={running}></span>
           <strong>{display(d.name)}</strong>
         </button>

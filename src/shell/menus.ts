@@ -1,3 +1,4 @@
+import { chooseDistroIcon } from '../state/icons.svelte'
 import { app, act, openTerminal, display, makeDefault, rename, type Distro } from '../state/app.svelte'
 
 export type MenuItem = { label: string; onselect: () => void; danger?: boolean; disabled?: boolean }
@@ -10,6 +11,7 @@ export function distroMenu(d: Distro): MenuItem[] {
     { label: 'Terminal', onselect: () => openTerminal(d.name) },
     { label: 'Terminal externe', onselect: () => void act('terminal', d.name), disabled: busy },
     ...(running ? [{ label: 'Redémarrer', onselect: () => void act('restart', d.name), disabled: busy }] : []),
+    { label: 'Changer l’icône…', onselect: () => void chooseDistroIcon(d.name, display(d.name)) },
     { label: 'Modifier l’alias…', onselect: () => void rename(d.name) },
     ...(d.is_default ? [] : [{ label: 'Définir par défaut', onselect: () => void makeDefault(d.name), disabled: busy }]),
     { label: 'Exporter…', onselect: () => (app.ops = { mode: 'export', source: d.name }), disabled: busy },

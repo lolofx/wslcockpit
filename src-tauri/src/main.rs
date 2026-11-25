@@ -218,6 +218,38 @@ fn layouts_save(doc: serde_json::Value) -> Result<(), String> {
     std::fs::rename(&tmp, &p).map_err(|e| format!("Écriture des dispositions impossible : {e}"))
 }
 
+/// Réglages JSON structurés (icônes, lanceurs...) : liste blanche de fichiers, écriture atomique.
+const STORES: [&str; 1] = ["icons.json"];
+
+fn store_name(file: &str) -> Result<&str, String> {
+    STORES
+        .iter()
+        .copied()
+        .find(|f| *f == file)
+        .ok_or_else(|| format!("Fichier de réglages inconnu : {file}"))
+}
+
+#[tauri::command]
+fn store_load(file: String) -> Result<serde_json::Value, String> {
+    let p = settings::settings_path(store_name(&file)?)?;
+    Ok(std::fs::read_to_string(p)
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or(serde_json::Value::Null))
+}
+
+#[tauri::command]
+fn store_save(file: String, doc: serde_json::Value) -> Result<(), String> {
+    let p = settings::settings_path(store_name(&file)?)?;
+    if let Some(dir) = p.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let tmp = p.with_extension("json.tmp");
+    let json = serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?;
+    std::fs::write(&tmp, json).map_err(|e| format!("Écriture des réglages impossible : {e}"))?;
+    std::fs::rename(&tmp, &p).map_err(|e| format!("Écriture des réglages impossible : {e}"))
+}
+
 #[tauri::command]
 fn aliases() -> settings::Aliases {
     settings::load()
@@ -648,6 +680,8 @@ fn main() {
             pty_resize,
             pty_close,
             layouts_load,
+            store_load,
+            store_save,
             layouts_save,
             aliases,
             set_alias,

@@ -4,6 +4,7 @@
   import Shell from './shell/Shell.svelte'
   import Float from './shell/Float.svelte'
   import FeedbackHost from './ui/FeedbackHost.svelte'
+  import IconPicker from './icons/IconPicker.svelte'
 
   // Fenêtre d'un bloc détaché : l'adresse porte la distro et le bloc (voir Workspace.svelte, detach).
   const float = (() => {
@@ -19,4 +20,5 @@
 </script>
 
 <FeedbackHost />
+<IconPicker />
 {#if float}<Float distro={float.distro} block={float.block} />{:else}<Shell />{/if}
