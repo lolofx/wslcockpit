@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import { open as openDialog } from '@tauri-apps/plugin-dialog';
 
   // `fixed` : distro imposée (bloc d'espace de travail) ; sans lui, onglets Global + distros.
   let { distros, onclose, fixed }: { distros: string[]; onclose?: () => void; fixed?: string } = $props();
@@ -67,7 +68,26 @@
     }
   }
 
+  let base = $state('')
+  let baseMsg = $state('')
+  async function saveBase() {
+    try {
+      base = await invoke<string>('op_set_default_base', { path: base })
+      baseMsg = 'Enregistré.'
+    } catch (e) {
+      baseMsg = String(e)
+    }
+  }
+  async function browseBase() {
+    const r = await openDialog({ multiple: false, directory: true, defaultPath: base || undefined })
+    if (typeof r === 'string') {
+      base = r
+      await saveBase()
+    }
+  }
+
   onMount(() => {
+    invoke<string>('op_default_base').then((b) => (base = b))
     load();
   });
 </script>
@@ -87,6 +107,15 @@
   {/if}
 
   {#if target === null}
+    <div class="row">
+      <span>Dossier des nouvelles distributions</span>
+      <div class="pick">
+        <input bind:value={base} placeholder="C:\\WSL" onchange={saveBase} />
+        <button onclick={browseBase}>Parcourir…</button>
+      </div>
+      <span class="muted">Utilisé par création, import et clonage : chaque distro va dans <code>dossier\nom</code>. Vide = <code>%USERPROFILE%\WSL</code>.</span>
+      {#if baseMsg}<span class="muted">{baseMsg}</span>{/if}
+    </div>
     <p class="muted">Fichier <code>.wslconfig</code> de ton profil Windows. Une valeur vide retire la clé.</p>
   {:else}
     <p class="muted">Fichier <code>/etc/wsl.conf</code> de la distribution. Une valeur vide retire la clé.</p>
@@ -133,6 +162,9 @@
   .tabs .active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
   .row { display: grid; grid-template-columns: 14rem 1fr; gap: 0.2rem 0.8rem; align-items: center; margin-bottom: 0.6rem; }
   .row input, .row select { padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; }
+  .pick { display: flex; gap: 0.4rem; }
+  .pick input { flex: 1; min-width: 0; }
+  .row > .muted { grid-column: 2; }
   .row .bad { border-color: #b42323; }
   .err { grid-column: 2; color: #e5534b; font-size: 0.85rem; }
   .foot { display: flex; align-items: center; gap: 0.8rem; margin-top: 1rem; }

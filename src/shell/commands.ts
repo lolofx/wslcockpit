@@ -1,5 +1,5 @@
 // Commandes de la palette (Ctrl+K) : une seule définition, pour que tout soit atteignable au clavier.
-import { app, act, display, makeDefault, shutdownAll, rename } from '../state/app.svelte'
+import { app, act, openTerminal, display, makeDefault, shutdownAll, rename } from '../state/app.svelte'
 
 import type { Command } from './filter'
 export type Nav = { go: (view: string) => void; current: () => string | null }
@@ -21,7 +21,8 @@ export function buildCommands(nav: Nav): Command[] {
       run
         ? { id: `stop:${d.name}`, label: `Arrêter ${n}`, run: () => void act('stop', d.name) }
         : { id: `start:${d.name}`, label: `Démarrer ${n}`, run: () => void act('start', d.name) },
-      { id: `term:${d.name}`, label: `Terminal ${n}`, run: () => void act('terminal', d.name) },
+      { id: `term:${d.name}`, label: `Terminal ${n}`, run: () => openTerminal(d.name) },
+      { id: `termext:${d.name}`, label: `Terminal externe ${n}`, run: () => void act('terminal', d.name) },
       { id: `rename:${d.name}`, label: `Alias de ${n}…`, run: () => void rename(d.name) },
       { id: `export:${d.name}`, label: `Exporter ${n}…`, run: () => (app.ops = { mode: 'export', source: d.name }) },
       { id: `clone:${d.name}`, label: `Cloner ${n}…`, run: () => (app.ops = { mode: 'clone', source: d.name }) },
