@@ -1,6 +1,8 @@
 // Modèle de disposition : pur (sans Svelte, sans Tauri), donc testable avec `node --test`.
 // Une disposition = des piles (colonnes) de blocs. Les tailles sont des poids dont la somme vaut 1.
 
+import { parseSpec, type IconSpec } from '../icons/model.ts'
+
 export type Block = {
   id: string
   type: string // clé du registre (registry.ts) : ajouter un type n'exige aucun changement ici
@@ -137,22 +139,46 @@ export function parseLayout(raw: unknown): Layout {
   }
 }
 
+// Un affichage peut être vide (pas de disposition par défaut : ses blocs doivent nommer une distro).
+export const emptyLayout = (): Layout => ({ version: 1, stacks: [] })
+export function parseViewLayout(raw: unknown): Layout {
+  const l = raw as Layout | null
+  if (l?.version === 1 && Array.isArray(l.stacks) && l.stacks.length === 0) return emptyLayout()
+  const p = parseLayout(raw)
+  // parseLayout retombe sur le défaut si invalide : pour un affichage, on préfère vide.
+  return JSON.stringify(p) === JSON.stringify(parseLayout(null)) ? emptyLayout() : p
+}
+
 // --- Document complet (layouts.json) : une disposition courante par distro + des dispositions nommées.
 export type LayoutsDoc = {
   version: 1
   distros: Record<string, Layout>
   presets: Record<string, Layout> // dispositions nommées, applicables à toute distro
+  views: View[] // affichages libres ; leur disposition est dans `distros` sous la clé viewKey(id)
 }
 
-export const emptyDoc = (): LayoutsDoc => ({ version: 1, distros: {}, presets: {} })
+// Affichage : espace de travail non lié à une distro, dont les blocs portent leur propre distro (props.distro).
+export type View = { id: string; name: string; icon?: IconSpec }
+export const viewKey = (id: string) => `view:${id}`
+export const isViewKey = (k: string) => k.startsWith('view:')
+
+export const emptyDoc = (): LayoutsDoc => ({ version: 1, distros: {}, presets: {}, views: [] })
 
 export function parseDoc(raw: unknown): LayoutsDoc {
   const doc = emptyDoc()
   try {
     const r = raw as Partial<LayoutsDoc> | null
     if (!r || r.version !== 1) return doc
-    for (const [k, v] of Object.entries(r.distros ?? {})) doc.distros[k] = parseLayout(v)
+    for (const [k, v] of Object.entries(r.distros ?? {})) doc.distros[k] = isViewKey(k) ? parseViewLayout(v) : parseLayout(v)
     for (const [k, v] of Object.entries(r.presets ?? {})) doc.presets[k] = parseLayout(v)
+    const seen = new Set<string>()
+    for (const v of Array.isArray(r.views) ? r.views : []) {
+      const o = v as Partial<View> | null
+      if (!o || typeof o.id !== 'string' || !o.id || typeof o.name !== 'string' || seen.has(o.id)) continue
+      seen.add(o.id)
+      const icon = parseSpec(o.icon)
+      doc.views.push({ id: o.id, name: o.name, ...(icon ? { icon } : {}) })
+    }
   } catch {
     /* document illisible : repart de zéro */
   }
@@ -187,3 +213,44 @@ export function applyPreset(doc: LayoutsDoc, name: string): Layout | null {
   const p = doc.presets[name]
   return p ? cloneLayout(p) : null
 }
+
+// --- Affichages : opérations pures sur le document.
+export function addView(doc: LayoutsDoc, name: string): { doc: LayoutsDoc; id: string } {
+  const id = uid('v')
+  const n = name.trim() || 'Affichage'
+  const layout: Layout = { version: 1, stacks: [] }
+  return { id, doc: { ...doc, views: [...doc.views, { id, name: n }], distros: { ...doc.distros, [viewKey(id)]: layout } } }
+}
+
+export function updateView(doc: LayoutsDoc, id: string, patch: Partial<Omit<View, 'id'>>): LayoutsDoc {
+  return { ...doc, views: doc.views.map((v) => (v.id === id ? { ...v, ...patch, name: (patch.name ?? v.name).trim() || v.name } : v)) }
+}
+
+export function removeView(doc: LayoutsDoc, id: string): LayoutsDoc {
+  const distros = { ...doc.distros }
+  delete distros[viewKey(id)]
+  return { ...doc, views: doc.views.filter((v) => v.id !== id), distros }
+}
+
+export function moveView(doc: LayoutsDoc, id: string, delta: -1 | 1): LayoutsDoc {
+  const i = doc.views.findIndex((v) => v.id === id)
+  const j = i + delta
+  if (i < 0 || j < 0 || j >= doc.views.length) return doc
+  const views = [...doc.views]
+  ;[views[i], views[j]] = [views[j], views[i]]
+  return { ...doc, views }
+}
+
+// Copie d'un affichage (disposition clonée, nouveaux identifiants).
+export function duplicateView(doc: LayoutsDoc, id: string): { doc: LayoutsDoc; id: string } | null {
+  const v = doc.views.find((x) => x.id === id)
+  if (!v) return null
+  const nid = uid('v')
+  const copy: View = { ...v, id: nid, name: `${v.name} (copie)` }
+  const layout = cloneLayout(doc.distros[viewKey(id)] ?? { version: 1, stacks: [] })
+  return { id: nid, doc: { ...doc, views: [...doc.views, copy], distros: { ...doc.distros, [viewKey(nid)]: layout } } }
+}
+
+// Distro d'un bloc : la sienne (affichage) ou celle de l'espace qui le contient.
+export const blockDistro = (b: Block, fallback: string): string =>
+  typeof b.props.distro === 'string' && b.props.distro ? b.props.distro : fallback

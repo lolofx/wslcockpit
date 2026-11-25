@@ -97,3 +97,36 @@ test('document : une disposition corrompue est réparée', () => {
   assert.equal(d.distros.U.version, 1)
   assert.ok(d.distros.U.stacks.length > 0)
 })
+
+import { addView, updateView, removeView, moveView, duplicateView, viewKey, blockDistro, emptyDoc as _e, parseDoc as _p, makeBlock as _mb } from './model.ts'
+
+test('affichages : ajout, renommage, ordre, copie, suppression', () => {
+  let { doc, id } = addView(_e(), '  Projet  ')
+  assert.equal(doc.views[0].name, 'Projet')
+  assert.ok(doc.distros[viewKey(id)])
+  doc = updateView(doc, id, { name: '   ', icon: { kind: 'emoji', value: '🚀' } })
+  assert.equal(doc.views[0].name, 'Projet')
+  assert.equal(doc.views[0].icon?.value, '🚀')
+  const b = addView(doc, 'B')
+  doc = moveView(b.doc, b.id, -1)
+  assert.deepEqual(doc.views.map((v) => v.name), ['B', 'Projet'])
+  assert.equal(moveView(doc, b.id, -1), doc)
+  const c = duplicateView(doc, id)!
+  assert.equal(c.doc.views.length, 3)
+  assert.notEqual(c.id, id)
+  doc = removeView(c.doc, id)
+  assert.equal(doc.views.length, 2)
+  assert.equal(doc.distros[viewKey(id)], undefined)
+})
+
+test('affichages : lecture tolérante', () => {
+  const d = _p({ version: 1, distros: {}, presets: {}, views: [{ id: 'a', name: 'X', icon: { kind: 'emoji', value: '🐧' } }, { id: 'a', name: 'dup' }, { name: 'sans id' }, 5] })
+  assert.equal(d.views.length, 1)
+  assert.equal(d.views[0].icon?.value, '🐧')
+  assert.deepEqual(_p({ version: 1, distros: {}, presets: {} }).views, [])
+})
+
+test('distro d un bloc', () => {
+  assert.equal(blockDistro(_mb('terminal', { distro: 'Debian' }), 'X'), 'Debian')
+  assert.equal(blockDistro(_mb('terminal', {}), 'X'), 'X')
+})

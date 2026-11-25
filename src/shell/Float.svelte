@@ -8,14 +8,14 @@
   import type { Block } from '../workspace/model'
   import Button from '../ui/Button.svelte'
 
-  let { distro, block: initial }: { distro: string; block: Block } = $props()
+  let { distro, space = distro, block: initial }: { distro: string; space?: string; block: Block } = $props()
   let block = $state<Block>(initial)
 
   onMount(() => {
     const stop = startApp(true)
     const win = getCurrentWindow()
     const un = win.onCloseRequested(() => {
-      void emit('block-reattach', { distro, block: $state.snapshot(block) })
+      void emit('block-reattach', { distro: space, block: $state.snapshot(block) })
     })
     return () => {
       stop()
