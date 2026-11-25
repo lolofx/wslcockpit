@@ -4,6 +4,7 @@
   import { listen } from '@tauri-apps/api/event'
   import { Terminal } from '@xterm/xterm'
   import { FitAddon } from '@xterm/addon-fit'
+  import { WebLinksAddon } from '@xterm/addon-web-links'
   import '@xterm/xterm/css/xterm.css'
   import type { BlockContext } from '../registry'
   import { terminalSpec, parseOsc7, parseOsc9, type TerminalProps } from '../terminals'
@@ -75,6 +76,8 @@
     term = new Terminal({ fontFamily: "'Cascadia Mono', Consolas, monospace", fontSize: 13, cursorBlink: true, scrollback: 5000, theme: theme() })
     fit = new FitAddon()
     term.loadAddon(fit)
+    // URL affichées par un outil (ex. aspire run) : Ctrl+clic ouvre le navigateur du système.
+    term.loadAddon(new WebLinksAddon((e, url) => { if (e.ctrlKey || e.metaKey) void invoke('open_external', { url }).catch((x) => (failure = String(x))) }))
     term.open(host)
     // Dossier courant annoncé par le shell : retenu dans la disposition pour la prochaine ouverture de l'appli.
     const remember = (dir: string | null) => { if (dir && dir !== (block.props as { last?: string }).last) update({ last: dir }) }
@@ -157,7 +160,7 @@
           <input value={p.kind === 'wsl' ? p.cwd ?? '' : ''} placeholder="~" onchange={(e) => update({ cwd: e.currentTarget.value, last: undefined })} />
         </label>
       {/if}
-      <p class="hint">Dossier courant retenu : {p.last ?? 'aucun'}. Les changements s’appliquent au prochain « Relancer ».</p>
+      <p class="hint">Ctrl+clic sur une adresse http(s) l’ouvre dans le navigateur. Dossier courant retenu : {p.last ?? 'aucun'}. Les changements s’appliquent au prochain « Relancer ».</p>
     </div>
   {/if}
   {#if failure}<div class="fail">{failure}</div>{/if}
