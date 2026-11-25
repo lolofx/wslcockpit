@@ -5,8 +5,8 @@
 // `last` : dernier dossier courant connu du shell (suivi par OSC 7 / OSC 9;9), repris au relancement de l'appli.
 // Forme native : chemin Linux pour `wsl`, chemin Windows ou UNC pour `powershell`.
 export type TerminalProps =
-  | { kind: 'wsl'; cwd?: string; last?: string }
-  | { kind: 'powershell'; start: 'distro' | 'profile'; path?: string; last?: string }
+  | { kind: 'wsl'; cwd?: string; last?: string; launch?: string }
+  | { kind: 'powershell'; start: 'distro' | 'profile'; path?: string; last?: string; launch?: string; dir?: string }
 
 export type TerminalSpec = { program: string; args: string[]; cwd: string | null; label: string; env: [string, string][] }
 
@@ -18,6 +18,10 @@ export const PS_TRACK = [
   '$global:__wc_prompt = $function:prompt',
   "function global:prompt { [Console]::Write([char]27 + ']9;9;' + (Get-Location).ProviderPath + [char]27 + '\\'); & $global:__wc_prompt }",
 ].join('; ')
+
+// Lanceur WSL : la commande passe par l'environnement (WSLC_CMD), le script reste fixe et sans guillemets.
+// Shell de connexion interactif (PATH de nvm, ~/.local/bin), puis shell de connexion quand l'outil se ferme.
+export const LAUNCH_SCRIPT = "exec ${SHELL:-/bin/bash} -lic 'eval $WSLC_CMD; exec ${SHELL:-/bin/bash} -l'"
 
 // -EncodedCommand : UTF-16LE en base64, évite tout problème de guillemets sur la ligne de commande.
 export function psEncode(script: string): string {
@@ -52,15 +56,21 @@ export function terminalSpec(distro: string, props: TerminalProps): TerminalSpec
     const args = ['-d', distro]
     const dir = props.last || props.cwd
     if (dir) args.push('--cd', dir)
-    return { program: 'wsl.exe', args, cwd: null, label: `${distro}${dir ? ` ${dir}` : ''}`, env: [['PROMPT_COMMAND', OSC7_PROMPT_COMMAND]] }
+    const env: [string, string][] = [['PROMPT_COMMAND', OSC7_PROMPT_COMMAND]]
+    if (props.launch) {
+      args.push('-e', 'sh', '-c', LAUNCH_SCRIPT)
+      env.push(['WSLC_CMD', props.launch])
+    }
+    return { program: 'wsl.exe', args, cwd: null, label: `${props.launch ? props.launch + ' · ' : ''}${distro}${dir ? ` ${dir}` : ''}`, env }
   }
   if (props.start === 'profile') {
-    const go = props.last ? `Set-Location -LiteralPath ${psQuote(props.last)}; ` : ''
+    const dir = props.last || props.dir
+    const go = dir ? `Set-Location -LiteralPath ${psQuote(dir)}; ` : ''
     return {
       program: 'powershell.exe',
-      args: ['-NoLogo', '-NoExit', '-EncodedCommand', psEncode(go + PS_TRACK)],
+      args: ['-NoLogo', '-NoExit', '-EncodedCommand', psEncode(go + PS_TRACK + (props.launch ? `; ${props.launch}` : ''))],
       cwd: null,
-      label: `PowerShell ${props.last ?? '(profil)'}`,
+      label: `${props.launch ? props.launch + ' · ' : ''}PowerShell ${dir ?? '(profil)'}`,
       env: [],
     }
   }
@@ -69,7 +79,7 @@ export function terminalSpec(distro: string, props: TerminalProps): TerminalSpec
   const unc = props.last || wslUncPath(distro, props.path || '/home')
   return {
     program: 'powershell.exe',
-    args: ['-NoLogo', '-NoExit', '-EncodedCommand', psEncode(`Set-Location -LiteralPath ${psQuote(unc)}; ${PS_TRACK}`)],
+    args: ['-NoLogo', '-NoExit', '-EncodedCommand', psEncode(`Set-Location -LiteralPath ${psQuote(unc)}; ${PS_TRACK}${props.launch ? `; ${props.launch}` : ''}`)],
     cwd: null,
     label: `PowerShell → ${unc}`,
     env: [],

@@ -218,3 +218,43 @@ test('dock : tout mis de côté reste lisible, un affichage invalide devient vid
   assert.equal(parseViewLayout(null).dock, undefined)
   assert.equal(parseViewLayout({ version: 1, stacks: [{ id: 1, blocks: [] }] }).stacks.length, 0)
 })
+
+import { parseLaunchers, upsertLauncher, removeLauncher, availableIn, launchProps, suggestions, emptyLaunchers } from '../launchers/model.ts'
+test('lanceurs : lecture, ajout, disponibilité, props de bloc, suggestions', () => {
+  const d = parseLaunchers({ launchers: [
+    { id: 'a', name: ' Claude ', target: 'wsl', command: ' claude ', distro: 'Debian', cwd: ' ' },
+    { id: 'a', name: 'doublon', target: 'wsl', command: 'x' },
+    { id: 'b', name: 'PS', target: 'windows', command: 'aspire run', distro: 'ignorée' },
+    { id: 'c', name: '', target: 'wsl', command: 'x' },
+    { id: 'd', name: 'x', target: 'autre', command: 'x' },
+  ] })
+  assert.deepEqual(d.launchers.map((l) => l.id), ['a', 'b'])
+  assert.deepEqual(d.launchers[0], { id: 'a', name: 'Claude', target: 'wsl', command: 'claude', distro: 'Debian' })
+  assert.equal(d.launchers[1].distro, undefined)
+  const [cl, ps] = d.launchers
+  assert.ok(availableIn(cl, 'Debian') && !availableIn(cl, 'Ubuntu') && availableIn(cl, null) && availableIn(ps, 'Ubuntu'))
+  assert.deepEqual(launchProps(cl, 'X', { distro: 'Debian', path: '/srv/p' }), { kind: 'wsl', distro: 'Debian', launch: 'claude', title: 'Claude', cwd: '/srv/p' })
+  assert.equal(launchProps(cl, 'X', { distro: 'Autre', path: '/srv/p' }).cwd, undefined)
+  assert.deepEqual(launchProps(ps, 'X', { distro: '', path: 'C:\\Dev' }), { kind: 'powershell', start: 'profile', launch: 'aspire run', title: 'PS', dir: 'C:\\Dev' })
+  assert.deepEqual(launchProps({ ...cl, distro: undefined, cwd: '/tmp' }, 'Ubuntu'), { kind: 'wsl', distro: 'Ubuntu', launch: 'claude', title: 'Claude', cwd: '/tmp' })
+  let doc = upsertLauncher(emptyLaunchers(), { id: 'z', name: 'Z', target: 'wsl', command: 'codex' })
+  doc = upsertLauncher(doc, { id: 'z', name: 'Z2', target: 'wsl', command: 'codex' })
+  assert.equal(doc.launchers.length, 1)
+  assert.equal(doc.launchers[0].name, 'Z2')
+  assert.equal(upsertLauncher(doc, { id: 'q', name: '', target: 'wsl', command: '' }), doc)
+  assert.equal(removeLauncher(doc, 'z').launchers.length, 0)
+  assert.deepEqual(suggestions(doc, 'Debian', ['claude', 'codex', 'vim']), [{ tool: 'claude', name: 'Claude Code' }])
+})
+
+import { LAUNCH_SCRIPT } from './terminals.ts'
+test('lanceur dans un terminal : script fixe, commande par l\'environnement', () => {
+  const w = terminalSpec('Debian', { kind: 'wsl', launch: 'claude --resume', cwd: '/srv/p' })
+  assert.deepEqual(w.args, ['-d', 'Debian', '--cd', '/srv/p', '-e', 'sh', '-c', LAUNCH_SCRIPT])
+  assert.ok(!LAUNCH_SCRIPT.includes('"') && !LAUNCH_SCRIPT.includes('claude'))
+  assert.deepEqual(w.env.map((e) => e[0]), ['PROMPT_COMMAND', 'WSLC_CMD'])
+  assert.equal(w.env[1][1], 'claude --resume')
+  const p = terminalSpec('Debian', { kind: 'powershell', start: 'profile', launch: 'aspire run', dir: 'C:\\Dev' })
+  const s = decodePs(p.args[3])
+  assert.ok(s.startsWith("Set-Location -LiteralPath 'C:\\Dev'; ") && s.endsWith('; aspire run'))
+  assert.ok(terminalSpec('D', { kind: 'wsl' }).args.indexOf('-e') < 0)
+})

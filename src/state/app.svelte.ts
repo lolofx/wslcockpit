@@ -6,6 +6,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from '@tauri
 import { confirmAction, promptText, toast } from '../ui/feedback.svelte'
 import { addBlock, makeBlock, type Block } from '../workspace/model'
 import { loadIcons } from './icons.svelte'
+import { loadLaunchers } from './launchers.svelte'
 import { layoutFor, loadLayouts, setLayoutExternal } from './layouts.svelte'
 
 export type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null }
@@ -184,7 +185,7 @@ function listenReattach() {
 // À appeler une fois au démarrage ; renvoie la fonction d'arrêt des minuteries.
 // `light` : fenêtre de bloc détaché (liste et monitoring seulement, pas de politiques ni de MAJ).
 export function startApp(light = false): () => void {
-  if (!light) { loadLayouts(); loadIcons() }
+  if (!light) { loadLayouts(); loadIcons(); loadLaunchers() }
   refresh()
   pollMonitor()
   const t = setInterval(() => !app.busy && refresh(), 3000)
