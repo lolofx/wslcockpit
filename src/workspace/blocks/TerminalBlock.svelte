@@ -6,7 +6,7 @@
   import { FitAddon } from '@xterm/addon-fit'
   import '@xterm/xterm/css/xterm.css'
   import type { BlockContext } from '../registry'
-  import { terminalSpec, type TerminalProps } from '../terminals'
+  import { terminalSpec, parseOsc7, parseOsc9, type TerminalProps } from '../terminals'
   import Button from '../../ui/Button.svelte'
 
   let { distro, block, update }: BlockContext = $props()
@@ -46,7 +46,7 @@
     try {
       fitNow()
       const o = await invoke<{ replay: string; end: number; alive: boolean }>('pty_open', {
-        id, program: spec.program, args: spec.args, cwd: spec.cwd, cols: term.cols, rows: term.rows,
+        id, program: spec.program, args: spec.args, cwd: spec.cwd, cols: term.cols, rows: term.rows, env: spec.env,
       })
       if (o.replay) term.write(bytes(o.replay))
       replayEnd = o.end
@@ -76,6 +76,10 @@
     fit = new FitAddon()
     term.loadAddon(fit)
     term.open(host)
+    // Dossier courant annoncé par le shell : retenu dans la disposition pour la prochaine ouverture de l'appli.
+    const remember = (dir: string | null) => { if (dir && dir !== (block.props as { last?: string }).last) update({ last: dir }) }
+    term.parser.registerOscHandler(7, (d) => { remember(parseOsc7(d)); return true })
+    term.parser.registerOscHandler(9, (d) => { remember(parseOsc9(d)); return true })
     // Ctrl+C copie quand il y a une sélection (sinon c'est l'interruption du shell) ; Ctrl+Shift+C/V toujours.
     term.attachCustomKeyEventHandler((e) => {
       if (e.type !== 'keydown' || !e.ctrlKey) return true
@@ -123,8 +127,8 @@
   })
 
   function setMode(m: string) {
-    if (m === 'wsl') update({ kind: 'wsl', start: undefined })
-    else update({ kind: 'powershell', start: m, path: p.kind === 'powershell' ? p.path ?? '/home' : '/home' })
+    if (m === 'wsl') update({ kind: 'wsl', start: undefined, last: undefined })
+    else update({ kind: 'powershell', start: m, last: undefined, path: p.kind === 'powershell' ? p.path ?? '/home' : '/home' })
   }
 </script>
 
@@ -146,14 +150,14 @@
       </label>
       {#if mode === 'distro'}
         <label>Dossier Linux
-          <input value={p.kind === 'powershell' ? p.path ?? '/home' : ''} onchange={(e) => update({ path: e.currentTarget.value })} />
+          <input value={p.kind === 'powershell' ? p.path ?? '/home' : ''} onchange={(e) => update({ path: e.currentTarget.value, last: undefined })} />
         </label>
       {:else if mode === 'wsl'}
         <label>Dossier de départ
-          <input value={p.kind === 'wsl' ? p.cwd ?? '' : ''} placeholder="~" onchange={(e) => update({ cwd: e.currentTarget.value })} />
+          <input value={p.kind === 'wsl' ? p.cwd ?? '' : ''} placeholder="~" onchange={(e) => update({ cwd: e.currentTarget.value, last: undefined })} />
         </label>
       {/if}
-      <p class="hint">Les changements s’appliquent au prochain « Relancer ».</p>
+      <p class="hint">Dossier courant retenu : {p.last ?? 'aucun'}. Les changements s’appliquent au prochain « Relancer ».</p>
     </div>
   {/if}
   {#if failure}<div class="fail">{failure}</div>{/if}

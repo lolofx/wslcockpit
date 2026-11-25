@@ -135,6 +135,11 @@ fn allowed_program(p: &str) -> bool {
     )
 }
 
+/// Seule variable que le front peut injecter : le suivi du dossier courant (OSC 7) du shell.
+fn allowed_env(name: &str) -> bool {
+    name == "PROMPT_COMMAND"
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 fn pty_open(
@@ -146,9 +151,14 @@ fn pty_open(
     cwd: Option<String>,
     cols: u16,
     rows: u16,
+    env: Option<Vec<(String, String)>>,
 ) -> Result<PtyOpened, String> {
     if !allowed_program(&program) {
         return Err(format!("Programme non autorisé : {program}"));
+    }
+    let env = env.unwrap_or_default();
+    if let Some((k, _)) = env.iter().find(|(k, _)| !allowed_env(k)) {
+        return Err(format!("Variable non autorisée : {k}"));
     }
     let sink: pty::Sink = std::sync::Arc::new(move |ev| match ev {
         pty::Event::Data { id, bytes, end } => {
@@ -168,6 +178,7 @@ fn pty_open(
             cwd,
             cols,
             rows,
+            env,
         },
         sink,
     )?;
