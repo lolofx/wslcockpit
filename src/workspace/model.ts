@@ -158,7 +158,13 @@ export type LayoutsDoc = {
 }
 
 // Affichage : espace de travail non lié à une distro, dont les blocs portent leur propre distro (props.distro).
-export type View = { id: string; name: string; icon?: IconSpec }
+export type ProjectRoot = { distro: string; path: string } // distro vide = dossier Windows
+export type View = { id: string; name: string; icon?: IconSpec; root?: ProjectRoot }
+
+export function parseRoot(raw: unknown): ProjectRoot | undefined {
+  const r = raw as Partial<ProjectRoot> | null
+  return r && typeof r.distro === 'string' && typeof r.path === 'string' && r.path ? { distro: r.distro, path: r.path } : undefined
+}
 export const viewKey = (id: string) => `view:${id}`
 export const isViewKey = (k: string) => k.startsWith('view:')
 
@@ -177,7 +183,8 @@ export function parseDoc(raw: unknown): LayoutsDoc {
       if (!o || typeof o.id !== 'string' || !o.id || typeof o.name !== 'string' || seen.has(o.id)) continue
       seen.add(o.id)
       const icon = parseSpec(o.icon)
-      doc.views.push({ id: o.id, name: o.name, ...(icon ? { icon } : {}) })
+      const root = parseRoot(o.root)
+      doc.views.push({ id: o.id, name: o.name, ...(icon ? { icon } : {}), ...(root ? { root } : {}) })
     }
   } catch {
     /* document illisible : repart de zéro */

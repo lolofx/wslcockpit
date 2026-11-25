@@ -121,9 +121,10 @@ test('affichages : ajout, renommage, ordre, copie, suppression', () => {
 })
 
 test('affichages : lecture tolérante', () => {
-  const d = _p({ version: 1, distros: {}, presets: {}, views: [{ id: 'a', name: 'X', icon: { kind: 'emoji', value: '🐧' } }, { id: 'a', name: 'dup' }, { name: 'sans id' }, 5] })
+  const d = _p({ version: 1, distros: {}, presets: {}, views: [{ id: 'a', name: 'X', icon: { kind: 'emoji', value: '🐧' }, root: { distro: 'Debian', path: '/srv' } }, { id: 'a', name: 'dup' }, { name: 'sans id' }, 5] })
   assert.equal(d.views.length, 1)
   assert.equal(d.views[0].icon?.value, '🐧')
+  assert.deepEqual(d.views[0].root, { distro: 'Debian', path: '/srv' })
   assert.deepEqual(_p({ version: 1, distros: {}, presets: {} }).views, [])
 })
 
@@ -151,4 +152,19 @@ test('reprise au dossier courant mémorisé', () => {
   const pd = terminalSpec('Ubuntu', { kind: 'powershell', start: 'distro', path: '/home', last: 'C:\\x' })
   assert.ok(decodePs(pd.args[3]).startsWith("Set-Location -LiteralPath 'C:\\x'; "))
   assert.equal(decodePs(psEncode('é😀a')), 'é😀a')
+})
+
+import { groupStatus, statusLabel, joinRel, breadcrumb } from './project.ts'
+test('projet : groupes git, libellés, fil d’Ariane', () => {
+  const f = (path: string, x: string, y: string) => ({ path, x, y, from: null })
+  const g = groupStatus([f('a', ' ', 'M'), f('b', 'A', ' '), f('c', 'M', 'M'), f('d', '?', '?')])
+  assert.deepEqual(g.staged.map((x) => x.path), ['b', 'c'])
+  assert.deepEqual(g.changed.map((x) => x.path), ['a', 'c'])
+  assert.deepEqual(g.untracked.map((x) => x.path), ['d'])
+  assert.equal(statusLabel(f('c', 'A', 'M'), true), 'A')
+  assert.equal(statusLabel(f('c', 'A', 'M'), false), 'M')
+  assert.equal(statusLabel(f('d', '?', '?'), false), '?')
+  assert.equal(joinRel('', 'x'), 'x')
+  assert.equal(joinRel('a/b', 'x'), 'a/b/x')
+  assert.deepEqual(breadcrumb('a/b'), [{ name: '·', rel: '' }, { name: 'a', rel: 'a' }, { name: 'b', rel: 'a/b' }])
 })

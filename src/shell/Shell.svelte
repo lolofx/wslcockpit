@@ -135,7 +135,7 @@
       {:else if current}
         <Workspace distro={current.name} />
       {:else if curView}
-        <Workspace distro="" space={viewKey(curView.id)} views />
+        <Workspace distro="" space={viewKey(curView.id)} projectRoot={curView.root} views />
       {/if}
     </section>
 
