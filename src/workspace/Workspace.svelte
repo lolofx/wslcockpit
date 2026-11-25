@@ -1,5 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
+  import { flip } from 'svelte/animate'
+  import { scale } from 'svelte/transition'
   import { invoke } from '@tauri-apps/api/core'
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
   import {
@@ -98,12 +100,14 @@
 
   // --- glisser-déposer par événements pointeur (le DnD HTML5 est intercepté par Tauri sous Windows)
   let swallowClick = false
+  let dragStart = $state<{ x: number; y: number } | null>(null)
   let railEl = $state<HTMLElement | null>(null)
   let drag = $state<{ id: string; x: number; y: number; target: DragTarget | null; from: 'stack' | 'dock'; ind: { l: number; t: number; w: number; h: number } | null } | null>(null)
 
   function startDrag(e: PointerEvent, id: string, from: 'stack' | 'dock' = 'stack') {
     if (from === 'stack' && (e.target as HTMLElement).closest('button, details, select, input')) return
     const sx = e.clientX, sy = e.clientY
+    dragStart = { x: sx, y: sy }
     const head = e.currentTarget as HTMLElement
     head.setPointerCapture(e.pointerId)
     let active = false
@@ -122,6 +126,7 @@
         else layout = from === 'dock' ? undockTo(layout, id, tg) : moveBlock(layout, id, tg)
       }
       drag = null
+      dragStart = null
       if (active) { swallowClick = true; setTimeout(() => (swallowClick = false), 0) }
     }
     head.addEventListener('pointermove', move)
@@ -277,7 +282,8 @@
 {#if layout.dock?.length || drag?.from === 'stack'}
   <aside class="dock" class:empty-zone={!layout.dock?.length} class:active={drag?.target?.kind === 'dock'} bind:this={railEl} aria-label={t('workspace.dock.label')} title={layout.dock?.length ? undefined : t('workspace.dock.dropHint')}>
     {#each layout.dock ?? [] as b (b.id)}
-      <button class="dk" class:dragged={drag?.id === b.id} title={t('workspace.dock.restoreTitle', { title: titleOf(b.type, b.props) })} aria-label={t('workspace.dock.restore', { title: titleOf(b.type, b.props) })}
+      <button class="dk" class:dragged={drag?.id === b.id && drag.from === 'dock'} style:transform={drag?.id === b.id && drag.from === 'dock' && dragStart ? `translate(${drag.x - dragStart.x}px, ${drag.y - dragStart.y}px)` : undefined}
+        animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.6 }} out:scale={{ duration: 120, start: 0.6 }} title={t('workspace.dock.restoreTitle', { title: titleOf(b.type, b.props) })} aria-label={t('workspace.dock.restore', { title: titleOf(b.type, b.props) })}
         onpointerdown={(e) => startDrag(e, b.id, 'dock')} onclick={() => { if (!swallowClick) layout = undockBlock(layout, b.id) }}>
         <Icon spec={{ kind: 'symbol', value: def(b.type)?.icon ?? 'box' }} size={18} />
       </button>
@@ -338,24 +344,24 @@
   .pad { padding: var(--sp-3); color: var(--text-dim); }
   .empty { margin: auto; color: var(--text-dim); text-align: center; padding: var(--sp-4); }
   .area { display: flex; flex: 1; min-height: 0; min-width: 0; }
-  .dock { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); width: 2.9rem; box-sizing: border-box; margin: 2px 0 2px 2px; padding: var(--sp-2) 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); color: var(--text-dim); overflow-y: auto; transition: border-color var(--dur), background var(--dur), color var(--dur); }
+  .dock { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); width: 2.9rem; box-sizing: border-box; margin: 2px 0 2px 2px; padding: var(--sp-2) 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2); color: var(--text-dim); overflow-y: auto; transition: border-color var(--dur), background var(--dur), color var(--dur); }
   .dock.empty-zone { justify-content: center; border: 2px dashed var(--border); background: transparent; }
   .dock.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-2)); }
   .dk { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: none; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--text); cursor: grab; touch-action: none; transition: background var(--dur), border-color var(--dur); }
   .dk:hover, .dk:focus-visible { background: var(--surface-3); border-color: var(--accent); outline: none; }
-  .dk.dragged { opacity: 0.35; }
+  .dk.dragged { position: relative; z-index: 6; pointer-events: none; cursor: grabbing; background: var(--surface-3); border-color: var(--accent); box-shadow: var(--shadow); transition: none; }
   .ws { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; padding: 2px; }
   .stack { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .block { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius); margin: 2px; background: var(--surface-1); }
+  .block { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); transition: opacity var(--dur), border-color var(--dur); margin: 2px; background: var(--surface-1); }
   .block.dragging { opacity: 0.35; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--sp-2) 0 var(--sp-3); background: var(--surface-2); border-radius: var(--radius) var(--radius) 0 0; cursor: grab; user-select: none; touch-action: none; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--sp-2) 0 var(--sp-3); background: var(--surface-2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; cursor: grab; user-select: none; touch-action: none; }
   .t { font-size: var(--fs-sm); font-weight: 600; }
-  .body { flex: 1; min-height: 0; overflow: auto; container-type: inline-size; border-radius: 0 0 var(--radius) var(--radius); }
+  .body { flex: 1; min-height: 0; overflow: auto; container-type: inline-size; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
   .split { flex: none; touch-action: none; }
   .split.v { width: 6px; cursor: col-resize; }
   .split.h { height: 6px; cursor: row-resize; }
   .split:hover { background: var(--surface-3); }
-  .ind { position: absolute; background: var(--accent); border-radius: 2px; pointer-events: none; opacity: 0.8; z-index: 5; }
+  .ind { position: absolute; transition: left 120ms ease, top 120ms ease, width 120ms ease, height 120ms ease; background: var(--accent); border-radius: 2px; pointer-events: none; opacity: 0.8; z-index: 5; }
   .ghost { position: fixed; z-index: 100; pointer-events: none; padding: var(--sp-2) var(--sp-4); min-width: 9rem; border: 1px solid var(--accent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 22%, var(--surface-1)); opacity: 0.7; font-size: var(--fs-sm); font-weight: 600; box-shadow: var(--shadow); }
   @media (max-width: 700px) {
     .area { flex-direction: column; }
