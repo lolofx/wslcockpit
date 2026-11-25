@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core'
-  import { app, display, find, act, size, stateLabel, toggleAutostart, shutdownAll, refresh, reloadAliases } from '../state/app.svelte'
+  import { app, nav, display, find, act, size, stateLabel, toggleAutostart, shutdownAll, refresh, reloadAliases } from '../state/app.svelte'
   import { buildCommands } from './commands'
   import { distroMenu, type MenuItem } from './menus'
   import Palette from './Palette.svelte'
@@ -20,6 +20,7 @@
   let bell = $state(false)
 
   const go = (v: string) => { view = v; drawer = false }
+  nav.go = go
   const commands = $derived(buildCommands({ go, current: () => view }))
   const current = $derived(find(view))
   const absent = $derived(app.error === 'WSL_ABSENT')

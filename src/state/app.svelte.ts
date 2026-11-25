@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification'
 import { confirmAction, promptText, toast } from '../ui/feedback.svelte'
-import { addBlock, type Block } from '../workspace/model'
+import { addBlock, makeBlock, type Block } from '../workspace/model'
 import { layoutFor, loadLayouts, setLayoutExternal } from './layouts.svelte'
 
 export type Distro = { name: string; state: string; version: number; is_default: boolean; vhdx_bytes: number | null }
@@ -100,6 +100,18 @@ export const act = (cmd: Cmd, name: string) =>
     if (cmd === 'start' || cmd === 'restart') await new Promise((r) => setTimeout(r, 1500))
     notify(`${display(name)} : ${VERB[cmd]}.`, 'success', { distro: name, toast: false })
   })
+
+// Navigation fournie par la coquille (évite un import circulaire).
+export const nav = { go: (_view: string) => {} }
+
+// Terminal intégré : va sur l'espace de la distro ; ajoute un bloc terminal WSL s'il n'y en a pas.
+export function openTerminal(name: string) {
+  const l = layoutFor(name)
+  if (!l.stacks.some((s) => s.blocks.some((b) => b.type === 'terminal'))) {
+    setLayoutExternal(name, addBlock(l, makeBlock('terminal', { kind: 'wsl' })))
+  }
+  nav.go(name)
+}
 
 export const makeDefault = (name: string) => run(name, () => invoke('set_default_distro', { name }))
 
