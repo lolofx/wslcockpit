@@ -452,6 +452,27 @@ fn open_url(url: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// Ouvre une adresse web dans le navigateur du système (http ou https seulement, sans espace ni caractère de contrôle).
+fn is_web_url(u: &str) -> bool {
+    (u.starts_with("https://") || u.starts_with("http://"))
+        && u.len() < 2048
+        && !u
+            .chars()
+            .any(|c| c.is_control() || c.is_whitespace() || c == '"')
+}
+
+#[tauri::command]
+fn open_external(url: String) -> Result<(), String> {
+    if !is_web_url(&url) {
+        return Err("Lien refusé.".into());
+    }
+    std::process::Command::new("rundll32.exe")
+        .args(["url.dll,FileProtocolHandler", &url])
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn autostart_get() -> bool {
     autostart::is_enabled()
@@ -710,6 +731,7 @@ fn main() {
             monitor,
             check_update,
             open_url,
+            open_external,
             read_wslconfig,
             write_wslconfig,
             read_distro_conf,
@@ -745,6 +767,24 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn adresses_web_autorisees() {
+        assert!(
+            is_web_url("https://localhost:17000/login?t=abc")
+                && is_web_url("http://127.0.0.1:5000")
+        );
+        assert!(
+            !is_web_url("file:///C:/Windows")
+                && !is_web_url("javascript:alert(1)")
+                && !is_web_url("ftp://x")
+        );
+        assert!(
+            !is_web_url("https://a.b/x y")
+                && !is_web_url("https://a.b/\"x")
+                && !is_web_url("https://a.b/\nx")
+        );
+    }
 
     #[test]
     fn programmes_autorises() {

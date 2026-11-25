@@ -160,9 +160,14 @@
     const p = def(type)?.presets[i]
     if (p) layout = addBlock(layout, makeBlock(type, { ...p.props, ...(onDistro ? { distro: onDistro } : {}) }))
   }
+  // Un bloc en ouvre un autre (ex. fichier .md du bloc Projet) : on réutilise un bloc du même type s'il existe.
+  function openBlock(type: string, props: Record<string, unknown>) {
+    const ex = layout.stacks.flatMap((s) => s.blocks).find((x) => x.type === type)
+    layout = ex ? setBlockProps(layout, ex.id, props) : addBlock(layout, makeBlock(type, props))
+  }
   // Un bloc a besoin d'une distro, sauf PowerShell sur le profil Windows.
   const needsDistro = (type: string, props: Record<string, unknown>) =>
-    type !== 'project' && !(type === 'terminal' && props.kind === 'powershell' && props.start === 'profile')
+    type !== 'project' && type !== 'markdown' && !(type === 'terminal' && props.kind === 'powershell' && props.start === 'profile')
   const baseTitle = (type: string, props: Record<string, unknown>) => {
     if (type !== 'terminal') return def(type)?.label ?? type
     return props.kind === 'wsl' ? 'Terminal WSL' : props.start === 'profile' ? 'PowerShell (profil)' : 'PowerShell (disque distro)'
@@ -257,7 +262,7 @@
               {#if needsDistro(b.type, b.props) && app.loaded && !app.distros.some((x) => x.name === blockDistro(b, distro))}
                 <p class="pad">Distribution « {blockDistro(b, distro) || '?'} » absente.</p>
               {:else}
-              <C distro={blockDistro(b, distro)} root={projectRoot} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
+              <C distro={blockDistro(b, distro)} root={projectRoot} open={openBlock} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
               {/if}
             {:else}
               <p class="pad">Bloc inconnu « {b.type} ».</p>
