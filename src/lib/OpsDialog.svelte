@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from '../i18n/index.svelte';
+  import { t, bm } from '../i18n/index.svelte';
   import Dialog from '../ui/Dialog.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
@@ -134,7 +134,7 @@
       <p>
         {t('ops.convert.text', { from: version, to: version === 2 ? 1 : 2 })}
       </p>
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
         <button class="primary" onclick={() => go()}>{t('ops.convert.go', { to: version === 2 ? 1 : 2 })}</button>
         <button onclick={onclose}>{t('ops.cancel')}</button>
@@ -143,8 +143,8 @@
       <p>
         {t('ops.sparse.text')}
       </p>
-      {#if sparseReason}<div class="error">{sparseReason}</div>{/if}
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if sparseReason}<div class="error">{bm(sparseReason)}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
         <button class="primary" disabled={sparseReason !== ''} onclick={() => go(true)}>{t('ops.sparse.enable')}</button>
         <button disabled={sparseReason !== ''} onclick={() => go(false)}>{t('ops.sparse.disable')}</button>
@@ -159,7 +159,7 @@
         {#if upd.latest && !upd.newer}<p class="muted">{t('ops.update.upToDate')}</p>{/if}
         <p class="muted">{t('ops.update.warning')}</p>
       {/if}
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
         <button class="primary" disabled={!upd} onclick={() => go()}>{t('ops.update.go')}</button>
         <button onclick={onclose}>{t('ops.cancel')}</button>
@@ -168,7 +168,7 @@
       {#if onlineLoading}
         <p class="muted">{t('ops.create.loading')}</p>
       {:else if online.length === 0}
-        {#if error}<div class="error">{error}</div>{/if}
+        {#if error}<div class="error">{bm(error)}</div>{/if}
         <button onclick={loadOnline}>{t('ops.create.retry')}</button>
       {:else}
         <ul class="catalog" role="radiogroup" aria-label={t('ops.create.available')}>
@@ -182,7 +182,7 @@
         </ul>
         <p class="muted">{t('ops.create.weight')}</p>
         <label class="opt"><input type="checkbox" bind:checked={custom} disabled={customReason !== ''} onchange={toggleCustom} /> {t('ops.create.custom')}</label>
-        {#if customReason}<p class="muted">{customReason}</p>{/if}
+        {#if customReason}<p class="muted">{bm(customReason)}</p>{/if}
         {#if custom}
           <label>{t('ops.create.name')}
             <input bind:value={name} oninput={suggestDir} />
@@ -192,7 +192,7 @@
           </label>
         {/if}
         <p class="muted">{t('ops.create.default')}</p>
-        {#if error}<div class="error">{error}</div>{/if}
+        {#if error}<div class="error">{bm(error)}</div>{/if}
         <div class="foot">
           <button class="primary" disabled={!selected} onclick={() => go()}>{t('ops.create.go')}</button>
           <button onclick={onclose}>{t('ops.cancel')}</button>
@@ -217,22 +217,22 @@
       {:else}
         <p class="muted">{t('ops.form.dirHint')} {mode === 'clone' ? t('ops.form.cloneHint') : ''}</p>
       {/if}
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
         <button class="primary" onclick={() => go()}>{mode === 'export' ? t('ops.form.export') : mode === 'clone' ? t('ops.form.clone') : t('ops.form.import')}</button>
         <button onclick={onclose}>{t('ops.cancel')}</button>
       </div>
     {:else if status}
       {#if status.active}
-        <p>{status.stage}</p>
+        <p>{bm(status.stage)}</p>
         <progress></progress>
         {#if status.bytes > 0}<p class="muted">{t('ops.progress.written', { size: size(status.bytes) })}</p>{/if}
         <button onclick={() => invoke('op_cancel')}>{t('ops.progress.cancel')}</button>
       {:else if status.error}
-        <div class="error">{status.error}</div>
+        <div class="error">{bm(status.error)}</div>
         <button onclick={onclose}>{t('ops.close')}</button>
       {:else}
-        <div class="ok">{status.done}</div>
+        <div class="ok">{bm(status.done ?? "")}</div>
         <button onclick={onclose}>{t('ops.close')}</button>
       {/if}
     {/if}

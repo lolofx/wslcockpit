@@ -1,5 +1,6 @@
 // Traduction réactive : t("espace.cle", { var }) relit la langue courante ($state), donc l'interface change à chaud.
 import { invoke } from '@tauri-apps/api/core'
+import { backendMsg } from './backend.ts'
 import { detectLang, flatten, isLang, translate, type Dict, type Lang, type Params, type Tree } from './core.ts'
 
 // Un fichier JSON par langue et par espace de noms : locales/<lang>/<espace>.json -> clés « <espace>.… ».
@@ -53,4 +54,9 @@ export async function setLang(l: Lang): Promise<void> {
     /* ignoré : la langue reste appliquée pour la session */
   }
   syncTray()
+}
+
+/** Message venu du backend Rust (texte français d'échange) affiché dans la langue courante. */
+export function bm(text: string): string {
+  return backendMsg(text, t)
 }

@@ -1,4 +1,4 @@
-import { t } from '../i18n/index.svelte'
+import { t, bm } from '../i18n/index.svelte'
 // État partagé de l'application : distros, alias, politiques, monitoring, actions.
 // Tous les écrans et blocs le lisent ; aucun ne fait ses propres appels de liste.
 import { invoke } from '@tauri-apps/api/core'
@@ -91,7 +91,7 @@ async function run(name: string, fn: () => Promise<unknown>, after?: () => Promi
     if (after) await after()
   } catch (e) {
     app.error = String(e)
-    notify(String(e), 'error', { distro: name === '*' ? undefined : name })
+    notify(bm(String(e)), 'error', { distro: name === '*' ? undefined : name })
   }
   app.busy = null
   await refresh()
@@ -165,12 +165,12 @@ async function pollOp() {
   try {
     const st = await invoke<OpStatus>('op_status')
     if (opWasActive && !st.active) {
-      if (st.error) notify(st.error, 'error', { system: true })
-      else if (st.done) notify(st.done, 'success', { system: true })
+      if (st.error) notify(bm(st.error), 'error', { system: true })
+      else if (st.done) notify(bm(st.done), 'success', { system: true })
       refresh()
     }
     opWasActive = st.active
-    app.opStage = st.active ? st.stage : null
+    app.opStage = st.active ? bm(st.stage) : null
   } catch {
     /* sans opération : rien à faire */
   }

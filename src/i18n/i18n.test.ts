@@ -71,3 +71,27 @@ test('les clés littérales utilisées existent', () => {
   }
   assert.deepEqual(bad, [])
 })
+
+// Messages backend : le français traduit doit redonner exactement le message d'origine (le motif et le texte restent liés).
+import { backendMsg, RULES } from './backend.ts'
+
+test('backendMsg : aller-retour fr et traduction en', () => {
+  const fr = load('fr')
+  const en = load('en')
+  const trFr = (k: string, p?: Record<string, string | number>) => translate({ fr, en }, 'fr', k, p)
+  const trEn = (k: string, p?: Record<string, string | number>) => translate({ fr, en }, 'en', k, p)
+  const samples = [
+    'Une opération est déjà en cours.',
+    'Exporté vers C:\\x\\a.tar',
+    '« Ubuntu » clonée en « Ubuntu-2 ».',
+    'wsl.exe a échoué (code 1) : boom',
+    'Mode sparse indisponible : WSL 1.2.5 installé, 2.0.0 ou plus requis (wsl --update).',
+    'Conversion en WSL2…',
+    'WSL est à jour (version 2.4.4).',
+    'Téléchargement et installation de Debian…',
+  ]
+  for (const s of samples) assert.equal(backendMsg(s, trFr), s, s)
+  assert.equal(backendMsg('Exporté vers C:\\x\\a.tar', trEn), 'Exported to C:\\x\\a.tar')
+  assert.equal(backendMsg('sortie inconnue', trEn), 'sortie inconnue')
+  for (const r of RULES) assert.ok(r.key in fr && r.key in en, r.key)
+})

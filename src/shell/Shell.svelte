@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from '../i18n/index.svelte'
+  import { t, bm } from '../i18n/index.svelte'
   import { invoke } from '@tauri-apps/api/core'
   import { app, nav, display, find, act, size, stateLabel, toggleAutostart, shutdownAll, refresh, reloadAliases } from '../state/app.svelte'
   import { buildCommands } from './commands'
@@ -126,7 +126,7 @@
         <strong>{t('shell.banner.wslAbsentTitle')}</strong> {t('shell.banner.wslAbsentBefore')} <code>wsl --install</code>{t('shell.banner.wslAbsentAfter')}
       </div>
     {:else if app.error}
-      <div class="banner err">{app.error}</div>
+      <div class="banner err">{bm(app.error)}</div>
     {/if}
 
     <section class="content">

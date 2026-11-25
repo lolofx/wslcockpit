@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from '../i18n/index.svelte';
+  import { t, bm } from '../i18n/index.svelte';
   import Dialog from '../ui/Dialog.svelte';
   import { invoke } from '@tauri-apps/api/core';
 
@@ -29,7 +29,7 @@
     <label>{t('ops.delete.typeName')}
       <input bind:value={typed} placeholder={name} />
     </label>
-    {#if error}<div class="error">{error}</div>{/if}
+    {#if error}<div class="error">{bm(error)}</div>{/if}
     <div class="foot">
       <button onclick={onexport} disabled={busy}>{t('ops.delete.exportFirst')}</button>
       <button class="danger" onclick={remove} disabled={busy || typed !== name}>{t('ops.delete.confirm')}</button>

@@ -9,7 +9,7 @@
   import type { BlockContext } from '../registry'
   import { terminalSpec, parseOsc7, parseOsc9, type TerminalProps } from '../terminals'
   import Button from '../../ui/Button.svelte'
-  import { t } from '../../i18n/index.svelte'
+  import { t, bm } from '../../i18n/index.svelte'
 
   let { distro, block, update }: BlockContext = $props()
   const id = block.id // la session vit côté Rust sous cet identifiant, indépendamment de l'affichage
@@ -164,7 +164,7 @@
       <p class="hint">{t('blocks.terminal.hint', { last: p.last ?? t('blocks.terminal.none') })}</p>
     </div>
   {/if}
-  {#if failure}<div class="fail">{failure}</div>{/if}
+  {#if failure}<div class="fail">{bm(failure)}</div>{/if}
   <div class="host" bind:this={host} onpointerdown={() => term.focus()} role="presentation"></div>
   {#if exited}
     <div class="ended">{t('blocks.terminal.ended')} <Button onclick={restart}>{t('blocks.terminal.restart')}</Button></div>

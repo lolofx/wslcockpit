@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t, lang, setLang } from '../i18n/index.svelte'
+  import { t, bm, lang, setLang } from '../i18n/index.svelte'
   import { LANGS, type Lang } from '../i18n/core.ts'
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
@@ -123,7 +123,7 @@
         <button onclick={browseBase}>{t('config.base.browse')}</button>
       </div>
       <span class="muted">{t('config.base.hint')}</span>
-      {#if baseMsg}<span class="muted">{baseMsg}</span>{/if}
+      {#if baseMsg}<span class="muted">{bm(baseMsg)}</span>{/if}
     </div>
     <p class="muted">{t('config.globalFile')}</p>
   {:else}
@@ -146,7 +146,7 @@
         {:else}
           <input bind:value={values[f.id]} placeholder={f.hint} class:bad={errors[f.id]} />
         {/if}
-        {#if errors[f.id]}<span class="err">{errors[f.id]}</span>{/if}
+        {#if errors[f.id]}<span class="err">{bm(errors[f.id])}</span>{/if}
       </label>
     {/each}
     <div class="foot">
@@ -161,7 +161,7 @@
   {:else if !failure}
     <p class="muted">{t('config.load')}</p>
   {/if}
-  {#if failure}<div class="error">{failure}</div>{/if}
+  {#if failure}<div class="error">{bm(failure)}</div>{/if}
 </section>
 
 <style>
