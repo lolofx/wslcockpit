@@ -518,9 +518,28 @@ async fn config_save(
 
 #[tauri::command]
 fn op_default_base() -> String {
+    if let Some(b) = settings::load_file("app.json").get("default_base") {
+        if !b.trim().is_empty() {
+            return b.clone();
+        }
+    }
     std::env::var("USERPROFILE")
         .map(|h| format!("{h}\\WSL"))
         .unwrap_or_default()
+}
+
+/// Dossier par défaut des nouvelles distributions (vide = valeur d'origine). Enregistré dans app.json.
+#[tauri::command]
+fn op_set_default_base(path: String) -> Result<String, String> {
+    let mut a = settings::load_file("app.json");
+    let p = path.trim().trim_end_matches('\\').to_string();
+    if p.is_empty() {
+        a.remove("default_base");
+    } else {
+        a.insert("default_base".into(), p);
+    }
+    settings::save_file("app.json", &a)?;
+    Ok(op_default_base())
 }
 
 #[tauri::command]
@@ -647,6 +666,7 @@ fn main() {
             config_load,
             config_save,
             op_default_base,
+            op_set_default_base,
             op_status,
             op_cancel,
             op_export,
