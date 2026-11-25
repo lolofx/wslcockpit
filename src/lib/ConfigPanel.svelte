@@ -167,19 +167,13 @@
 <style>
   .top { display: flex; justify-content: space-between; align-items: center; }
   h2 { font-size: 1.15rem; margin: 0; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0; }
-  .tabs .active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+  .tabs { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin: var(--sp-3) 0; padding: var(--sp-1); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); width: fit-content; max-width: 100%; }
   .row { display: grid; grid-template-columns: 14rem 1fr; gap: 0.2rem 0.8rem; align-items: center; margin-bottom: 0.6rem; }
-  .row input, .row select { padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; }
   .pick { display: flex; gap: 0.4rem; }
   .pick input { flex: 1; min-width: 0; }
   .row > .muted { grid-column: 2; }
-  .row .bad { border-color: #b42323; }
-  .err { grid-column: 2; color: #e5534b; font-size: 0.85rem; }
+  .row :global(.bad) { border-color: var(--danger); }
+  .err { grid-column: 2; color: var(--danger); font-size: 0.85rem; }
   .foot { display: flex; align-items: center; gap: 0.8rem; margin-top: 1rem; }
-  .primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
-  .warn { padding: 0.6rem 0.9rem; margin: 0.8rem 0; border-radius: 8px; background: #d2992233; border: 1px solid #d29922; }
-  .error { padding: 0.7rem 1rem; margin-top: 0.8rem; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
-  .muted { opacity: 0.65; font-size: 0.9rem; }
-  button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas); background: Canvas; color: CanvasText; cursor: pointer; }
+  .muted { color: var(--text-dim); font-size: var(--fs-sm); }
 </style>

@@ -240,18 +240,14 @@
 
 <style>
   label { display: block; margin-bottom: 0.7rem; font-size: 0.9rem; }
-  input { display: block; width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text); }
+  input { display: block; width: 100%; box-sizing: border-box; margin-top: var(--sp-1); }
   progress { width: 100%; }
-  .catalog { list-style: none; margin: 0 0 0.6rem; padding: 0; max-height: 14rem; overflow: auto; border: 1px solid var(--border); border-radius: 6px; }
-  .opt { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; margin: 0; cursor: pointer; }
+  .catalog { list-style: none; margin: 0 0 0.6rem; padding: 0; max-height: 14rem; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  .opt { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); margin: 0; cursor: pointer; transition: background var(--dur); }
+  .opt:hover { background: var(--surface-2); }
   .opt input { display: inline-block; width: auto; margin: 0; }
   .pick { display: flex; gap: 0.4rem; align-items: end; }
   .pick input { flex: 1; }
   .foot { display: flex; gap: 0.5rem; }
-  .primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
-  .muted { opacity: 0.65; font-size: 0.85rem; }
-  .error { padding: 0.6rem 0.9rem; margin: 0.6rem 0; border-radius: 8px; background: #b4232333; border: 1px solid #b42323; white-space: pre-wrap; }
-  .ok { padding: 0.6rem 0.9rem; margin: 0.6rem 0; border-radius: 8px; background: #2ea04333; border: 1px solid #2ea043; }
-  button:disabled { opacity: 0.5; cursor: default; }
-  button { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text); cursor: pointer; }
+  .muted { color: var(--text-dim); font-size: var(--fs-sm); }
 </style>

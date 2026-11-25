@@ -75,7 +75,7 @@
   .doc { flex: 1; overflow: auto; padding: var(--sp-2) var(--sp-4); line-height: 1.55; font-size: var(--fs); }
   .doc :global(h1), .doc :global(h2) { border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
   .doc :global(code) { background: var(--surface-2); padding: 0.1em 0.35em; border-radius: var(--radius-sm); font-size: 0.9em; }
-  .doc :global(pre) { background: var(--surface-2); padding: var(--sp-3); border-radius: var(--radius); overflow: auto; }
+  .doc :global(pre) { background: var(--surface-2); padding: var(--sp-3); border-radius: var(--radius-lg); overflow: auto; }
   .doc :global(pre code) { background: none; padding: 0; }
   .doc :global(a) { color: var(--accent); }
   .doc :global(blockquote) { margin-left: 0; padding-left: var(--sp-3); border-left: 3px solid var(--border); color: var(--text-dim); }

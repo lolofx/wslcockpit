@@ -124,7 +124,8 @@
   h2, h3 { margin: 0; }
   h3 { margin-top: var(--sp-3); font-size: var(--fs); }
   .muted { color: var(--text-dim); font-size: var(--fs-sm); }
-  .item { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-1); }
+  .item { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); transition: border-color var(--dur), box-shadow var(--dur); }
+  .item:hover { border-color: var(--accent); }
   .txt { flex: 1; display: grid; min-width: 0; }
   .row { display: flex; gap: var(--sp-2); }
   .form { display: grid; gap: var(--sp-3); }

@@ -176,11 +176,11 @@
   .bar { display: flex; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-2); border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
   .label { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .grow { flex: 1; }
-  .host { flex: 1; min-height: 0; padding: 4px 0 0 6px; background: var(--surface-1); overflow: hidden; }
+  .host { flex: 1; min-height: 0; padding: 4px 0 0 6px; background: var(--surface-1); overflow: hidden; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
   .host :global(.xterm) { height: 100%; }
   .settings { display: grid; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
   label { display: grid; gap: 2px; }
   .hint { margin: 0; color: var(--text-dim); }
   .fail { padding: var(--sp-2) var(--sp-3); background: color-mix(in srgb, var(--danger) 14%, transparent); font-size: var(--fs-sm); white-space: pre-wrap; }
-  .ended { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+  .ended { background: var(--surface-2); display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 </style>
