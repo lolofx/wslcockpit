@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { parseDoc, savePreset, applyPreset, deletePreset, emptyDoc, defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, parseLayout, findBlock, MAX_STACKS } from './model.ts'
-import { terminalSpec, wslUncPath, psQuote } from './terminals.ts'
+import { terminalSpec, wslUncPath, psQuote, psEncode, parseOsc7, parseOsc9, OSC7_PROMPT_COMMAND, PS_TRACK } from './terminals.ts'
+const decodePs = (b64: string) => Buffer.from(b64, 'base64').toString('utf16le')
 
 const sum = (xs: { size: number }[]) => xs.reduce((a, x) => a + x.size, 0)
 
@@ -67,8 +68,8 @@ test('terminaux : chemin UNC et specs', () => {
   const p = terminalSpec('Ubuntu', { kind: 'powershell', start: 'distro', path: '/home/lolofx' })
   assert.equal(p.program, 'powershell.exe')
   assert.equal(p.cwd, null)
-  assert.deepEqual(p.args.slice(0, 3), ['-NoLogo', '-NoExit', '-Command'])
-  assert.equal(p.args[3], "Set-Location -LiteralPath '\\\\wsl.localhost\\Ubuntu\\home\\lolofx'")
+  assert.deepEqual(p.args.slice(0, 3), ['-NoLogo', '-NoExit', '-EncodedCommand'])
+  assert.ok(decodePs(p.args[3]).startsWith("Set-Location -LiteralPath '\\\\wsl.localhost\\Ubuntu\\home\\lolofx'; "))
   assert.equal(psQuote("o'neil"), "'o''neil'")
   assert.equal(terminalSpec('Ubuntu', { kind: 'powershell', start: 'profile' }).cwd, null)
 })
@@ -129,4 +130,25 @@ test('affichages : lecture tolérante', () => {
 test('distro d un bloc', () => {
   assert.equal(blockDistro(_mb('terminal', { distro: 'Debian' }), 'X'), 'Debian')
   assert.equal(blockDistro(_mb('terminal', {}), 'X'), 'X')
+})
+
+test('suivi du dossier : OSC 7 et OSC 9;9', () => {
+  assert.equal(parseOsc7('file://Debian/home/lolofx/mon%20projet'), '/home/lolofx/mon projet')
+  assert.equal(parseOsc7('file://Debian/home/a b%zz'), '/home/a b%zz')
+  assert.equal(parseOsc7('http://x/y'), null)
+  assert.equal(parseOsc9('9;C:\\Users\\a'), 'C:\\Users\\a')
+  assert.equal(parseOsc9('4;1;50'), null)
+  assert.equal(parseOsc9('9;'), null)
+})
+
+test('reprise au dossier courant mémorisé', () => {
+  const w = terminalSpec('Ubuntu', { kind: 'wsl', cwd: '~', last: '/srv/app' })
+  assert.deepEqual(w.args, ['-d', 'Ubuntu', '--cd', '/srv/app'])
+  assert.deepEqual(w.env, [['PROMPT_COMMAND', OSC7_PROMPT_COMMAND]])
+  const pr = terminalSpec('Ubuntu', { kind: 'powershell', start: 'profile', last: "C:\\Users\\o'neil" })
+  assert.ok(decodePs(pr.args[3]).startsWith("Set-Location -LiteralPath 'C:\\Users\\o''neil'; "))
+  assert.ok(decodePs(pr.args[3]).endsWith(PS_TRACK))
+  const pd = terminalSpec('Ubuntu', { kind: 'powershell', start: 'distro', path: '/home', last: 'C:\\x' })
+  assert.ok(decodePs(pd.args[3]).startsWith("Set-Location -LiteralPath 'C:\\x'; "))
+  assert.equal(decodePs(psEncode('é😀a')), 'é😀a')
 })

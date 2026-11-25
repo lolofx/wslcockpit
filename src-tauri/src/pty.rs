@@ -45,6 +45,17 @@ pub struct Spec {
     pub cwd: Option<String>,
     pub cols: u16,
     pub rows: u16,
+    /// Variables ajoutées à l'environnement (liste blanche côté commande Tauri).
+    pub env: Vec<(String, String)>,
+}
+
+/// WSLENV avec `name` ajouté : les variables listées passent de Windows vers la distro (wsl.exe).
+pub fn wslenv_with(existing: Option<&str>, name: &str) -> String {
+    match existing.filter(|e| !e.is_empty()) {
+        Some(e) if e.split(':').any(|p| p.split('/').next() == Some(name)) => e.to_string(),
+        Some(e) => format!("{e}:{name}"),
+        None => name.to_string(),
+    }
 }
 
 pub enum Event {
@@ -116,6 +127,13 @@ impl PtyState {
         }
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
+        for (k, v) in &spec.env {
+            cmd.env(k, v);
+            cmd.env(
+                "WSLENV",
+                wslenv_with(std::env::var("WSLENV").ok().as_deref(), k),
+            );
+        }
         let mut child = pair
             .slave
             .spawn_command(cmd)
@@ -263,6 +281,7 @@ mod tests {
             cwd: None,
             cols: 80,
             rows: 24,
+            env: vec![],
         };
         let o = st.open("t1", &spec, sink.clone()).unwrap();
         assert!(o.alive && o.replay.is_empty());
@@ -293,6 +312,7 @@ mod tests {
             cwd: None,
             cols: 80,
             rows: 24,
+            env: vec![],
         };
         st.open("t2", &spec, sink).unwrap();
         let mut exited = false;
@@ -315,7 +335,47 @@ mod tests {
             cwd: None,
             cols: 80,
             rows: 24,
+            env: vec![],
         };
         assert!(st.open("t3", &spec, sink).is_err());
+    }
+
+    #[test]
+    fn wslenv_ajoute_sans_doublon() {
+        assert_eq!(wslenv_with(None, "PROMPT_COMMAND"), "PROMPT_COMMAND");
+        assert_eq!(wslenv_with(Some(""), "PROMPT_COMMAND"), "PROMPT_COMMAND");
+        assert_eq!(
+            wslenv_with(Some("A/p"), "PROMPT_COMMAND"),
+            "A/p:PROMPT_COMMAND"
+        );
+        assert_eq!(
+            wslenv_with(Some("PROMPT_COMMAND/u:A"), "PROMPT_COMMAND"),
+            "PROMPT_COMMAND/u:A"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn variables_transmises_au_processus() {
+        let st = PtyState::default();
+        let (tx, rx) = mpsc::channel();
+        let tx = Mutex::new(tx);
+        let sink: Sink = Arc::new(move |e| {
+            let _ = tx.lock().unwrap().send(e);
+        });
+        let spec = Spec {
+            program: "sh".into(),
+            args: vec![
+                "-c".into(),
+                "printf '[%s]' \"$PROMPT_COMMAND\"; sleep 1".into(),
+            ],
+            cwd: None,
+            cols: 80,
+            rows: 24,
+            env: vec![("PROMPT_COMMAND".into(), "echo hi".into())],
+        };
+        st.open("e1", &spec, sink).unwrap();
+        assert!(collect(&rx, "[echo hi]"));
+        st.close("e1");
     }
 }
