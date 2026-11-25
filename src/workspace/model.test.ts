@@ -168,3 +168,21 @@ test('projet : groupes git, libellés, fil d’Ariane', () => {
   assert.equal(joinRel('a/b', 'x'), 'a/b/x')
   assert.deepEqual(breadcrumb('a/b'), [{ name: '·', rel: '' }, { name: 'a', rel: 'a' }, { name: 'b', rel: 'a/b' }])
 })
+
+import { resolveLink, isMarkdown, dirOf } from './markdown.ts'
+test('markdown : liens', () => {
+  assert.deepEqual(resolveLink('a/b.md', 'https://x.io/p'), { kind: 'external', url: 'https://x.io/p' })
+  assert.deepEqual(resolveLink('a/b.md', '#titre%20un'), { kind: 'anchor', id: 'titre un' })
+  assert.deepEqual(resolveLink('a/b.md', 'c.md'), { kind: 'file', rel: 'a/c.md' })
+  assert.deepEqual(resolveLink('a/b.md', '../d/e.md#x'), { kind: 'file', rel: 'd/e.md' })
+  assert.deepEqual(resolveLink('b.md', 'docs/mon%20fichier.md'), { kind: 'file', rel: 'docs/mon fichier.md' })
+  assert.deepEqual(resolveLink('a/b.md', '/README.md'), { kind: 'file', rel: 'README.md' })
+  assert.equal(resolveLink('b.md', '../secret').kind, 'refused')
+  assert.equal(resolveLink('b.md', 'javascript:alert(1)').kind, 'refused')
+  assert.equal(resolveLink('b.md', 'file:///etc/passwd').kind, 'refused')
+  assert.equal(resolveLink('b.md', 'C:\\x').kind, 'refused')
+  assert.equal(resolveLink('b.md', '//evil.io/x').kind, 'refused')
+  assert.ok(isMarkdown('README.MD') && isMarkdown('a.markdown') && !isMarkdown('a.txt'))
+  assert.equal(dirOf('a/b/c.md'), 'a/b')
+  assert.equal(dirOf('c.md'), '')
+})

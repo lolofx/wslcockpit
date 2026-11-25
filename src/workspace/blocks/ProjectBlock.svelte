@@ -4,10 +4,11 @@
   import { open as openDialog } from '@tauri-apps/plugin-dialog'
   import type { BlockContext } from '../registry'
   import { parseRoot, type ProjectRoot } from '../model'
+  import { isMarkdown } from '../markdown'
   import { groupStatus, statusLabel, breadcrumb, joinRel, type GitFile } from '../project'
   import Button from '../../ui/Button.svelte'
 
-  let { block, update, root: viewRoot }: BlockContext = $props()
+  let { block, update, root: viewRoot, open }: BlockContext = $props()
   const own = $derived(parseRoot((block.props as { root?: unknown }).root))
   const root = $derived<ProjectRoot | undefined>(own ?? viewRoot)
 
@@ -68,6 +69,10 @@
     }
   }
   async function showFile(path: string) {
+    if (isMarkdown(path) && open && root) {
+      open('markdown', { root, rel: path })
+      return
+    }
     try {
       shown = { title: path, text: await invoke<string>('fs_read', { root, rel: path }) }
     } catch (e) {

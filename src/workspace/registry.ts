@@ -5,9 +5,10 @@ import LogBlock from './blocks/LogBlock.svelte'
 import ConfigBlock from './blocks/ConfigBlock.svelte'
 import TerminalBlock from './blocks/TerminalBlock.svelte'
 import ProjectBlock from './blocks/ProjectBlock.svelte'
+import MarkdownBlock from './blocks/MarkdownBlock.svelte'
 
 // `root` : dossier du projet de l'affichage qui contient le bloc (s'il en a un).
-export type BlockContext = { distro: string; block: Block; update: (props: Record<string, unknown>) => void; root?: ProjectRoot }
+export type BlockContext = { distro: string; block: Block; update: (props: Record<string, unknown>) => void; root?: ProjectRoot; open?: (type: string, props: Record<string, unknown>) => void }
 
 // Ajouter un type de bloc = une entrée ici + un composant. Rien d'autre à toucher (layout, glisser, persistance).
 export type BlockDef = {
@@ -22,6 +23,7 @@ export const registry: BlockDef[] = [
   { type: 'config', label: 'Configuration', component: ConfigBlock, presets: [{ label: 'Configuration', props: {} }] },
   { type: 'log', label: 'Journal', component: LogBlock, presets: [{ label: 'Journal', props: {} }] },
   { type: 'project', label: 'Projet', component: ProjectBlock, presets: [{ label: 'Projet : git et fichiers', props: {} }] },
+  { type: 'markdown', label: 'Aperçu Markdown', component: MarkdownBlock, presets: [{ label: 'Aperçu Markdown', props: {} }] },
   {
     type: 'terminal',
     label: 'Terminal',
