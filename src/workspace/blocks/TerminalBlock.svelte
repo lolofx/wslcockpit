@@ -1,41 +1,178 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+  import { invoke } from '@tauri-apps/api/core'
+  import { listen } from '@tauri-apps/api/event'
+  import { Terminal } from '@xterm/xterm'
+  import { FitAddon } from '@xterm/addon-fit'
+  import '@xterm/xterm/css/xterm.css'
   import type { BlockContext } from '../registry'
   import { terminalSpec, type TerminalProps } from '../terminals'
+  import Button from '../../ui/Button.svelte'
+
   let { distro, block, update }: BlockContext = $props()
+  const id = block.id // la session vit côté Rust sous cet identifiant, indépendamment de l'affichage
   const p = $derived(block.props as unknown as TerminalProps)
   const spec = $derived(terminalSpec(distro, p))
   const mode = $derived(p.kind === 'wsl' ? 'wsl' : p.start === 'profile' ? 'profile' : 'distro')
+
+  let host: HTMLDivElement
+  let term: Terminal
+  let fit: FitAddon
+  let exited = $state(false)
+  let failure = $state('')
+  let settings = $state(false)
+  let replayEnd = -1 // -1 : rejeu pas encore reçu, les sorties directes sont mises de côté
+  let pending: { data: string; end: number }[] = []
+
+  const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+  const css = (n: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fallback
+  const theme = () => ({
+    background: css('--surface-1', '#1e1e1e'),
+    foreground: css('--text', '#e6e6e6'),
+    cursor: css('--accent', '#3b82f6'),
+    selectionBackground: css('--surface-3', '#44475a'),
+  })
+
+  function direct(m: { data: string; end: number }) {
+    if (m.end <= replayEnd) return // déjà inclus dans le rejeu
+    term.write(bytes(m.data))
+  }
+
+  async function start() {
+    failure = ''
+    exited = false
+    replayEnd = -1
+    pending = []
+    try {
+      fitNow()
+      const o = await invoke<{ replay: string; end: number; alive: boolean }>('pty_open', {
+        id, program: spec.program, args: spec.args, cwd: spec.cwd, cols: term.cols, rows: term.rows,
+      })
+      if (o.replay) term.write(bytes(o.replay))
+      replayEnd = o.end
+      pending.forEach(direct)
+      pending = []
+      exited = !o.alive
+    } catch (e) {
+      failure = String(e)
+      replayEnd = 0
+    }
+  }
+
+  async function restart() {
+    await invoke('pty_close', { id })
+    term.reset()
+    await start()
+  }
+
+  function fitNow() {
+    if (host && host.clientWidth > 0 && host.clientHeight > 0) {
+      try { fit.fit() } catch { /* hôte masqué */ }
+    }
+  }
+
+  onMount(() => {
+    term = new Terminal({ fontFamily: "'Cascadia Mono', Consolas, monospace", fontSize: 13, cursorBlink: true, scrollback: 5000, theme: theme() })
+    fit = new FitAddon()
+    term.loadAddon(fit)
+    term.open(host)
+    // Ctrl+C copie quand il y a une sélection (sinon c'est l'interruption du shell) ; Ctrl+Shift+C/V toujours.
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type !== 'keydown' || !e.ctrlKey) return true
+      const k = e.key.toLowerCase()
+      if ((k === 'c' && (term.hasSelection() || e.shiftKey))) {
+        void navigator.clipboard.writeText(term.getSelection())
+        return false
+      }
+      if (k === 'v' && e.shiftKey) {
+        void navigator.clipboard.readText().then((t) => term.paste(t))
+        return false
+      }
+      return true
+    })
+    term.onData((d) => void invoke('pty_write', { id, data: d }).catch(() => {}))
+    term.onResize(({ cols, rows }) => void invoke('pty_resize', { id, cols, rows }).catch(() => {}))
+
+    let raf = 0
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(fitNow)
+    })
+    ro.observe(host)
+    const mq = matchMedia('(prefers-color-scheme: dark)')
+    const onScheme = () => (term.options.theme = theme())
+    mq.addEventListener('change', onScheme)
+
+    const un: Promise<() => void>[] = [
+      listen<{ id: string; data: string; end: number }>('pty-data', (e) => {
+        if (e.payload.id !== id) return
+        if (replayEnd < 0) pending.push(e.payload)
+        else direct(e.payload)
+      }),
+      listen<string>('pty-exit', (e) => { if (e.payload === id) exited = true }),
+    ]
+    void Promise.all(un).then(start)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+      mq.removeEventListener('change', onScheme)
+      void Promise.all(un).then((fs) => fs.forEach((f) => f()))
+      term.dispose() // la session reste vivante : elle ne se ferme qu'avec le bloc
+    }
+  })
+
   function setMode(m: string) {
     if (m === 'wsl') update({ kind: 'wsl', start: undefined })
     else update({ kind: 'powershell', start: m, path: p.kind === 'powershell' ? p.path ?? '/home' : '/home' })
   }
 </script>
 
-<div class="pad">
-  <label>Type
-    <select value={mode} onchange={(e) => setMode(e.currentTarget.value)}>
-      <option value="wsl">Shell WSL</option>
-      <option value="distro">PowerShell, disque de la distro</option>
-      <option value="profile">PowerShell, dossier utilisateur</option>
-    </select>
-  </label>
-  {#if mode === 'distro'}
-    <label>Dossier Linux
-      <input value={p.kind === 'powershell' ? p.path ?? '/home' : ''} onchange={(e) => update({ path: e.currentTarget.value })} />
-    </label>
-  {:else if mode === 'wsl'}
-    <label>Dossier de départ
-      <input value={p.kind === 'wsl' ? p.cwd ?? '' : ''} placeholder="~" onchange={(e) => update({ cwd: e.currentTarget.value })} />
-    </label>
+<div class="term">
+  <div class="bar">
+    <span class="label" title={spec.program + ' ' + spec.args.join(' ')}>{spec.label}</span>
+    <span class="grow"></span>
+    <Button variant="ghost" onclick={() => (settings = !settings)} aria-expanded={settings}>Réglages</Button>
+    <Button variant="ghost" onclick={restart}>Relancer</Button>
+  </div>
+  {#if settings}
+    <div class="settings">
+      <label>Type
+        <select value={mode} onchange={(e) => setMode(e.currentTarget.value)}>
+          <option value="wsl">Shell WSL</option>
+          <option value="distro">PowerShell, disque de la distro</option>
+          <option value="profile">PowerShell, dossier utilisateur</option>
+        </select>
+      </label>
+      {#if mode === 'distro'}
+        <label>Dossier Linux
+          <input value={p.kind === 'powershell' ? p.path ?? '/home' : ''} onchange={(e) => update({ path: e.currentTarget.value })} />
+        </label>
+      {:else if mode === 'wsl'}
+        <label>Dossier de départ
+          <input value={p.kind === 'wsl' ? p.cwd ?? '' : ''} placeholder="~" onchange={(e) => update({ cwd: e.currentTarget.value })} />
+        </label>
+      {/if}
+      <p class="hint">Les changements s’appliquent au prochain « Relancer ».</p>
+    </div>
   {/if}
-  <pre>{spec.program} {spec.args.join(' ')}
-cwd : {spec.cwd ?? '(dossier utilisateur Windows)'}</pre>
-  <p class="hint">Terminal réel (ConPTY + xterm.js) : phase 7.</p>
+  {#if failure}<div class="fail">{failure}</div>{/if}
+  <div class="host" bind:this={host} onpointerdown={() => term.focus()} role="presentation"></div>
+  {#if exited}
+    <div class="ended">Processus terminé. <Button onclick={restart}>Relancer</Button></div>
+  {/if}
 </div>
 
 <style>
-  .pad { padding: 0.75rem; display: grid; gap: 0.5rem; }
-  label { display: grid; gap: 0.2rem; font-size: 0.85rem; }
-  pre { margin: 0; padding: 0.5rem; background: var(--surface-2); overflow: auto; font-size: 0.8rem; }
-  .hint { margin: 0; opacity: 0.6; font-size: 0.8rem; }
+  .term { display: flex; flex-direction: column; height: 100%; min-height: 8rem; }
+  .bar { display: flex; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-2); border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
+  .label { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .grow { flex: 1; }
+  .host { flex: 1; min-height: 0; padding: 4px 0 0 6px; background: var(--surface-1); overflow: hidden; }
+  .host :global(.xterm) { height: 100%; }
+  .settings { display: grid; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
+  label { display: grid; gap: 2px; }
+  .hint { margin: 0; color: var(--text-dim); }
+  .fail { padding: var(--sp-2) var(--sp-3); background: color-mix(in srgb, var(--danger) 14%, transparent); font-size: var(--fs-sm); white-space: pre-wrap; }
+  .ended { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 </style>

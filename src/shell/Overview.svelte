@@ -12,6 +12,7 @@
   <p class="dim">Chargement…</p>
 {:else if app.distros.length === 0}
   <p class="dim">Aucune distribution installée.</p>
+  <Button variant="primary" onclick={() => (app.ops = { mode: 'create', source: '' })}>Nouvelle distribution</Button>
 {:else}
   <div class="grid">
     {#each app.distros as d (d.name)}

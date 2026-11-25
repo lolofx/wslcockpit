@@ -8,6 +8,8 @@ export function buildCommands(nav: Nav): Command[] {
   const out: Command[] = [
     { id: 'overview', label: 'Vue d’ensemble', run: () => nav.go('overview') },
     { id: 'settings', label: 'Configuration (wsl.conf, .wslconfig)', run: () => nav.go('settings') },
+    { id: 'create', label: 'Nouvelle distribution…', run: () => (app.ops = { mode: 'create', source: '' }) },
+    { id: 'wslupdate', label: 'Mettre à jour WSL…', run: () => (app.ops = { mode: 'wslupdate', source: '' }) },
     { id: 'import', label: 'Importer une distribution…', run: () => (app.ops = { mode: 'import', source: '' }) },
     { id: 'shutdown', label: 'Tout arrêter', run: () => void shutdownAll() },
   ]

@@ -8,6 +8,7 @@ pub mod errors;
 pub mod exec;
 pub mod ini;
 pub mod monitor;
+pub mod online;
 pub mod ops;
 pub mod parse_list;
 pub mod parse_lxss;
@@ -28,6 +29,7 @@ pub use exec::{
 };
 pub use ini::Ini;
 pub use monitor::{cpu_percent, parse_df, parse_vm_sample, VmSample, VM_SCRIPT};
+pub use online::{custom_install_supported, install_args, parse_online, OnlineDistro};
 pub use ops::{
     check_new_name, check_tar_target, check_target_dir, convert_args, export_args, import_args,
     run_cancellable, sparse_args, sparse_supported,

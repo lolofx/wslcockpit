@@ -31,11 +31,15 @@
   })
 
   function key(e: KeyboardEvent) {
+    // Dans un terminal, Ctrl+K appartient au shell (effacer jusqu'en fin de ligne).
+    if ((e.target as HTMLElement | null)?.closest?.('.xterm')) return
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette = !palette }
   }
 
   const globalMenu = $derived<MenuItem[]>([
+    { label: 'Nouvelle distribution…', onselect: () => (app.ops = { mode: 'create', source: '' }) },
     { label: 'Importer une distribution…', onselect: () => (app.ops = { mode: 'import', source: '' }) },
+    { label: 'Mettre à jour WSL…', onselect: () => (app.ops = { mode: 'wslupdate', source: '' }) },
     { label: 'Configuration…', onselect: () => go('settings') },
     { label: `Démarrer avec Windows : ${app.autostart ? 'oui' : 'non'}`, onselect: () => void toggleAutostart() },
     { label: 'Tout arrêter…', onselect: () => void shutdownAll(), danger: true, disabled: app.busy !== null },
