@@ -50,7 +50,8 @@
 
 <style>
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--sp-3); }
-  .card { display: grid; gap: var(--sp-2); padding: var(--sp-4); background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  .card { display: grid; gap: var(--sp-2); padding: var(--sp-4); background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color var(--dur), box-shadow var(--dur), transform var(--dur) var(--ease); }
+  .card:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-1px); }
   .name { display: flex; align-items: center; gap: var(--sp-2); border: 0; background: none; padding: 0; color: var(--text); font: inherit; cursor: pointer; text-align: left; min-width: 0; }
   .name:hover strong { text-decoration: underline; }
   strong { overflow-wrap: anywhere; }

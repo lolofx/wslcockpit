@@ -41,7 +41,8 @@
 </div>
 
 <style>
-  .overlay { position: fixed; inset: 0; z-index: 100; background: var(--overlay); display: flex; align-items: center; justify-content: center; padding: var(--sp-4); }
+  .overlay { position: fixed; inset: 0; z-index: 100; background: var(--overlay); display: flex; align-items: center; justify-content: center; padding: var(--sp-4); animation: fade-in 120ms ease; }
+  .dialog { animation: pop-in 150ms var(--ease); }
   .dialog { max-height: 100%; overflow: auto; background: var(--surface-1); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: var(--sp-5); display: grid; gap: var(--sp-4); }
   h2 { margin: 0; font-size: var(--fs-lg); overflow-wrap: anywhere; }
   .body { display: grid; gap: var(--sp-3); }

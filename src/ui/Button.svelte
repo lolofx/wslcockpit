@@ -17,8 +17,9 @@
     font: inherit; font-size: var(--fs-sm); line-height: 1.2;
     padding: var(--sp-2) var(--sp-3); border-radius: var(--radius);
     border: 1px solid var(--border); background: var(--surface-1); color: var(--text);
-    cursor: pointer; transition: background var(--dur), border-color var(--dur);
+    cursor: pointer; transition: background var(--dur), border-color var(--dur), transform var(--dur) var(--ease);
   }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn:hover:not(:disabled) { background: var(--surface-2); }
   .btn:focus-visible { outline: none; box-shadow: var(--focus); }
   .btn:disabled { opacity: 0.5; cursor: default; }
