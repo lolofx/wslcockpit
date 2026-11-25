@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import { t } from '../i18n/index.svelte'
   import type { MenuItem } from '../shell/menus'
 
 
-  let { items, label = 'Actions', trigger }: { items: MenuItem[]; label?: string; trigger?: Snippet } = $props()
+  let { items, label, trigger }: { items: MenuItem[]; label?: string; trigger?: Snippet } = $props()
 
   let open = $state(false)
   let root: HTMLElement
@@ -41,7 +42,7 @@
 <svelte:window onresize={() => open && (open = false)} onpointerdown={(e) => open && !root.contains(e.target as Node) && (open = false)} />
 
 <div class="menu" bind:this={root} onkeydown={key} role="presentation">
-  <button class="trigger" aria-haspopup="menu" aria-expanded={open} aria-label={label} onclick={toggle}>
+  <button class="trigger" aria-haspopup="menu" aria-expanded={open} aria-label={label ?? t('ui.actions')} onclick={toggle}>
     {#if trigger}{@render trigger()}{:else}⋯{/if}
   </button>
   {#if open}

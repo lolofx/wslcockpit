@@ -1,0 +1,104 @@
+{
+  "nav": {
+    "label": "Navigation",
+    "overview": "Vue d’ensemble",
+    "settings": "Configuration",
+    "newView": "Nouvel affichage",
+    "closeMenu": "Fermer le menu",
+    "menu": "Menu"
+  },
+  "top": {
+    "stop": "Arrêter",
+    "start": "Démarrer",
+    "actionsOf": "Actions de {{name}}",
+    "viewActions": "Actions de l’affichage",
+    "globalActions": "Actions générales",
+    "notifications": "Notifications",
+    "palette": "Palette de commandes (Ctrl+K)"
+  },
+  "global": {
+    "create": "Nouvelle distribution…",
+    "import": "Importer une distribution…",
+    "wslUpdate": "Mettre à jour WSL…",
+    "settings": "Configuration…",
+    "autostartOn": "Démarrer avec Windows : oui",
+    "autostartOff": "Démarrer avec Windows : non",
+    "shutdownAll": "Tout arrêter…"
+  },
+  "banner": {
+    "update": "Nouvelle version {{version}} disponible.",
+    "release": "Voir la release",
+    "wslAbsentTitle": "WSL n’est pas installé ou pas activé.",
+    "wslAbsentBefore": "Ouvre PowerShell en administrateur et lance",
+    "wslAbsentAfter": ", puis redémarre le PC."
+  },
+  "status": {
+    "running": "{{running}}/{{total}} en marche",
+    "working": "Opération en cours…"
+  },
+  "state": {
+    "running": "En marche",
+    "stopped": "Arrêtée",
+    "installing": "Installation"
+  },
+  "size": {
+    "gb": "{{n}} Go",
+    "mb": "{{n}} Mo"
+  },
+  "overview": {
+    "loading": "Chargement…",
+    "empty": "Aucune distribution installée.",
+    "create": "Nouvelle distribution",
+    "open": "Ouvrir l’espace de travail",
+    "default": "défaut",
+    "disk": "Disque {{used}} / {{total}}",
+    "stop": "Arrêter",
+    "start": "Démarrer"
+  },
+  "palette": {
+    "title": "Palette de commandes",
+    "placeholder": "Tape une action ou une distribution…",
+    "none": "Aucune commande."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "clear": "Tout effacer"
+  },
+  "float": {
+    "reattach": "Rattacher"
+  },
+  "menu": {
+    "terminal": "Terminal",
+    "terminalExternal": "Terminal externe",
+    "restart": "Redémarrer",
+    "changeIcon": "Changer l’icône…",
+    "editAlias": "Modifier l’alias…",
+    "makeDefault": "Définir par défaut",
+    "export": "Exporter…",
+    "clone": "Cloner…",
+    "convert": "Convertir en WSL{{version}}…",
+    "sparse": "Compacter (sparse)…",
+    "delete": "Supprimer…"
+  },
+  "view": {
+    "newTitle": "Nouvel affichage",
+    "newMessage": "Un espace libre où mettre les blocs de plusieurs distributions.",
+    "rename": "Renommer…",
+    "nameTitle": "Nom de l’affichage",
+    "iconTitle": "Icône de « {{name}} »",
+    "rootWith": "Dossier du projet : {{root}}…",
+    "root": "Dossier du projet…",
+    "rootTitle": "Dossier du projet",
+    "rootMessage": "Debian:/home/moi/projet, un chemin \\\\wsl.localhost\\… ou C:\\Dev\\projet. Vide = aucun. Les blocs Projet de l’affichage l’utilisent.",
+    "rootUnknown": "Dossier non reconnu : utilise « Distro:/chemin » ou un chemin Windows.",
+    "duplicate": "Dupliquer",
+    "up": "▲ Monter",
+    "down": "▼ Descendre",
+    "delete": "Supprimer…",
+    "deleteTitle": "Supprimer l’affichage « {{name}} » ?",
+    "deleteMessage": "Ses terminaux sont fermés. Les distributions ne sont pas touchées.",
+    "deleteConfirm": "Supprimer",
+    "defaultName": "Affichage"
+  }
+}

@@ -2,13 +2,14 @@
   import Dialog from '../ui/Dialog.svelte'
   import Button from '../ui/Button.svelte'
   import Icon from './Icon.svelte'
+  import { t } from '../i18n/index.svelte'
   import { picker } from './picker.svelte'
   import { LOGOS, SYMBOLS } from './data'
   import { EMOJI } from './emoji'
   import { cleanInitials, initialsOf, type IconKind, type IconSpec } from './model'
 
   const COLORS = ['#e95420', '#2f81f7', '#3fb950', '#d29922', '#f85149', '#a371f7', '#db61a2', '#8b949e']
-  const TABS: [IconKind, string][] = [['logo', 'Linux'], ['symbol', 'Symboles'], ['emoji', 'Emoji'], ['initials', 'Initiales']]
+  const TABS = $derived<[IconKind, string][]>([['logo', t('icons.tabs.logo')], ['symbol', t('icons.tabs.symbol')], ['emoji', t('icons.tabs.emoji')], ['initials', t('icons.tabs.initials')]])
 
   const ask = $derived(picker.ask)
   let tab = $state<IconKind>('logo')
@@ -45,7 +46,7 @@
       {/each}
     </div>
     {#if tab !== 'initials'}
-      <input class="search" placeholder="Rechercher…" bind:value={query} aria-label="Rechercher une icône" />
+      <input class="search" placeholder={t('icons.search')} bind:value={query} aria-label={t('icons.searchLabel')} />
     {/if}
     <div class="grid">
       {#if tab === 'logo'}
@@ -62,24 +63,24 @@
         {/each}
       {:else}
         <div class="ini">
-          <label>2 caractères <input maxlength="4" bind:value={initials} oninput={() => (initials = cleanInitials(initials))} /></label>
+          <label>{t('icons.chars')} <input maxlength="4" bind:value={initials} oninput={() => (initials = cleanInitials(initials))} /></label>
           <Icon spec={{ kind: 'initials', value: initials || '?', color: color || undefined }} size={44} />
-          <Button variant="primary" disabled={!initials} onclick={() => choose('initials', initials)}>Utiliser</Button>
+          <Button variant="primary" disabled={!initials} onclick={() => choose('initials', initials)}>{t('icons.use')}</Button>
         </div>
       {/if}
     </div>
     {#if tab !== 'emoji'}
-      <div class="colors" aria-label="Couleur">
-        <span class="dim">Couleur</span>
-        <button class="sw none" class:on={!color} title="Par défaut" onclick={() => (color = '')}>∅</button>
+      <div class="colors" aria-label={t('icons.color')}>
+        <span class="dim">{t('icons.color')}</span>
+        <button class="sw none" class:on={!color} title={t('icons.default')} onclick={() => (color = '')}>∅</button>
         {#each COLORS as c}
           <button class="sw" class:on={color === c} style:background={c} title={c} aria-label={c} onclick={() => (color = c)}></button>
         {/each}
       </div>
     {/if}
     {#snippet footer()}
-      <Button onclick={() => ask.done(null)}>Automatique (initiales)</Button>
-      <Button onclick={() => ask.done(undefined)}>Annuler</Button>
+      <Button onclick={() => ask.done(null)}>{t('icons.auto')}</Button>
+      <Button onclick={() => ask.done(undefined)}>{t('icons.cancel')}</Button>
     {/snippet}
   </Dialog>
 {/if}

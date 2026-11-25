@@ -1,5 +1,6 @@
 import type { Component } from 'svelte'
 import type { Block, ProjectRoot } from './model'
+import { t } from '../i18n/index.svelte'
 import StateBlock from './blocks/StateBlock.svelte'
 import LogBlock from './blocks/LogBlock.svelte'
 import ConfigBlock from './blocks/ConfigBlock.svelte'
@@ -13,27 +14,27 @@ export type BlockContext = { distro: string; block: Block; update: (props: Recor
 // Ajouter un type de bloc = une entrée ici + un composant. Rien d'autre à toucher (layout, glisser, persistance).
 export type BlockDef = {
   type: string
-  label: string
+  readonly label: string // résolu à la lecture (getter) : suit la langue
   icon: string // symbole Lucide (src/icons/data.ts) pour la barre des blocs en attente
   component: Component<BlockContext>
-  presets: { label: string; props: Record<string, unknown> }[]
+  presets: { readonly label: string; props: Record<string, unknown> }[]
 }
 
 export const registry: BlockDef[] = [
-  { type: 'state', icon: 'layout-dashboard', label: 'État', component: StateBlock, presets: [{ label: 'État', props: {} }] },
-  { type: 'config', icon: 'settings', label: 'Configuration', component: ConfigBlock, presets: [{ label: 'Configuration', props: {} }] },
-  { type: 'log', icon: 'layers', label: 'Journal', component: LogBlock, presets: [{ label: 'Journal', props: {} }] },
-  { type: 'project', icon: 'folder-git-2', label: 'Projet', component: ProjectBlock, presets: [{ label: 'Projet : git et fichiers', props: {} }] },
-  { type: 'markdown', icon: 'book-open', label: 'Aperçu Markdown', component: MarkdownBlock, presets: [{ label: 'Aperçu Markdown', props: {} }] },
+  { type: 'state', icon: 'layout-dashboard', get label() { return t('workspace.type.state') }, component: StateBlock, presets: [{ get label() { return t('workspace.type.state') }, props: {} }] },
+  { type: 'config', icon: 'settings', get label() { return t('workspace.type.config') }, component: ConfigBlock, presets: [{ get label() { return t('workspace.type.config') }, props: {} }] },
+  { type: 'log', icon: 'layers', get label() { return t('workspace.type.log') }, component: LogBlock, presets: [{ get label() { return t('workspace.type.log') }, props: {} }] },
+  { type: 'project', icon: 'folder-git-2', get label() { return t('workspace.type.project') }, component: ProjectBlock, presets: [{ get label() { return t('workspace.preset.project') }, props: {} }] },
+  { type: 'markdown', icon: 'book-open', get label() { return t('workspace.type.markdown') }, component: MarkdownBlock, presets: [{ get label() { return t('workspace.type.markdown') }, props: {} }] },
   {
     type: 'terminal',
     icon: 'terminal',
-    label: 'Terminal',
+    get label() { return t('workspace.type.terminal') },
     component: TerminalBlock,
     presets: [
-      { label: 'Terminal WSL', props: { kind: 'wsl' } },
-      { label: 'PowerShell sur le disque de la distro', props: { kind: 'powershell', start: 'distro', path: '/home' } },
-      { label: 'PowerShell dossier utilisateur Windows', props: { kind: 'powershell', start: 'profile' } },
+      { get label() { return t('workspace.title.wsl') }, props: { kind: 'wsl' } },
+      { get label() { return t('workspace.preset.psDistro') }, props: { kind: 'powershell', start: 'distro', path: '/home' } },
+      { get label() { return t('workspace.preset.psProfile') }, props: { kind: 'powershell', start: 'profile' } },
     ],
   },
 ]

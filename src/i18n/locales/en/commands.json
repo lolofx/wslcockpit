@@ -1,0 +1,22 @@
+{
+  "overview": "Overview",
+  "settings": "Settings (wsl.conf, .wslconfig)",
+  "newView": "New view…",
+  "create": "New distribution…",
+  "wslUpdate": "Update WSL…",
+  "import": "Import a distribution…",
+  "shutdownAll": "Stop all",
+  "view": "View {{name}}",
+  "goto": "Go to {{name}}",
+  "stop": "Stop {{name}}",
+  "start": "Start {{name}}",
+  "terminal": "Terminal {{name}}",
+  "terminalExternal": "External terminal {{name}}",
+  "icon": "Icon of {{name}}…",
+  "alias": "Alias of {{name}}…",
+  "export": "Export {{name}}…",
+  "clone": "Clone {{name}}…",
+  "delete": "Delete {{name}}…",
+  "restart": "Restart {{name}}",
+  "makeDefault": "{{name}}: set as default"
+}

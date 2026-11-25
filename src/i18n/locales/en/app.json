@@ -1,0 +1,13 @@
+{
+  "icon": { "title": "Icon of “{{label}}”" },
+  "alias": {
+    "title": "Alias for “{{name}}”",
+    "message": "Empty = remove the alias. Display only, WSL is not modified."
+  },
+  "shutdown": {
+    "title": "Stop everything?",
+    "message": "wsl --shutdown\n\nRunning: {{list}}",
+    "none": "no distribution running",
+    "confirm": "Stop all"
+  }
+}

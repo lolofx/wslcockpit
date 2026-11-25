@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, bm } from '../i18n/index.svelte';
   import Dialog from '../ui/Dialog.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
@@ -25,22 +26,22 @@
   let upd = $state<{ current: string | null; latest: string | null; newer: boolean } | null>(null);
 
   const size = (b: number) =>
-    b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(2)} Go` : `${Math.round(b / 1024 ** 2)} Mo`;
+    b >= 1024 ** 3 ? t('ops.size.gb', { n: (b / 1024 ** 3).toFixed(2) }) : t('ops.size.mb', { n: Math.round(b / 1024 ** 2) });
 
   const title = $derived(
     mode === 'export'
-      ? `Exporter « ${source} »`
+      ? t('ops.title.export', { name: source })
       : mode === 'clone'
-        ? `Cloner « ${source} »`
+        ? t('ops.title.clone', { name: source })
         : mode === 'convert'
-          ? `Convertir « ${source} »`
+          ? t('ops.title.convert', { name: source })
           : mode === 'sparse'
-            ? `Mode sparse de « ${source} »`
+            ? t('ops.title.sparse', { name: source })
             : mode === 'wslupdate'
-              ? 'Mettre à jour WSL'
+              ? t('ops.title.wslupdate')
             : mode === 'create'
-              ? 'Nouvelle distribution'
-              : 'Importer une distribution'
+              ? t('ops.title.create')
+              : t('ops.title.import')
   );
 
   async function loadOnline() {
@@ -78,19 +79,19 @@
       base = b;
       if (mode === 'export') path = `${b}\\${source}.tar`;
       if (mode === 'clone') {
-        name = `${source}-copie`;
+        name = t('ops.cloneSuffix', { name: source });
         path = `${b}\\${name}`;
       }
     });
-    const t = setInterval(async () => {
+    const timer = setInterval(async () => {
       if (started) status = await invoke<Status>('op_status').catch(() => null);
     }, 1000);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   });
 
   async function browse(what: 'tar-open' | 'tar-save' | 'dir') {
     try {
-      const filters = [{ name: 'Archive tar', extensions: ['tar'] }];
+      const filters = [{ name: t('ops.tarFilter'), extensions: ['tar'] }];
       if (what === 'tar-save') {
         const r = await save({ defaultPath: path, filters });
         if (r) path = r;
@@ -121,7 +122,7 @@
       else if (mode === 'clone') await invoke('op_clone', { source, newName: name, dir: path });
       else await invoke('op_import', { name, dir: path, tar });
       started = true;
-      status = { active: true, kind: mode, stage: 'Démarrage…', done: null, error: null, bytes: 0 };
+      status = { active: true, kind: mode, stage: t('ops.starting'), done: null, error: null, bytes: 0 };
     } catch (e) {
       error = String(e);
     }
@@ -131,48 +132,46 @@
 <Dialog title={title} {onclose} width={560}>
     {#if !started && mode === 'convert'}
       <p>
-        Conversion de WSL{version} vers WSL{version === 2 ? 1 : 2}. Cela peut durer plusieurs minutes ;
-        la distribution doit être arrêtée. Fais un export avant si elle est importante.
+        {t('ops.convert.text', { from: version, to: version === 2 ? 1 : 2 })}
       </p>
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
-        <button class="primary" onclick={() => go()}>Convertir en WSL{version === 2 ? 1 : 2}</button>
-        <button onclick={onclose}>Annuler</button>
+        <button class="primary" onclick={() => go()}>{t('ops.convert.go', { to: version === 2 ? 1 : 2 })}</button>
+        <button onclick={onclose}>{t('ops.cancel')}</button>
       </div>
     {:else if !started && mode === 'sparse'}
       <p>
-        Le mode sparse permet à WSL de rendre l'espace libéré au disque Windows. La distribution doit
-        être arrêtée.
+        {t('ops.sparse.text')}
       </p>
-      {#if sparseReason}<div class="error">{sparseReason}</div>{/if}
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if sparseReason}<div class="error">{bm(sparseReason)}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
-        <button class="primary" disabled={sparseReason !== ''} onclick={() => go(true)}>Activer</button>
-        <button disabled={sparseReason !== ''} onclick={() => go(false)}>Désactiver</button>
-        <button onclick={onclose}>Annuler</button>
+        <button class="primary" disabled={sparseReason !== ''} onclick={() => go(true)}>{t('ops.sparse.enable')}</button>
+        <button disabled={sparseReason !== ''} onclick={() => go(false)}>{t('ops.sparse.disable')}</button>
+        <button onclick={onclose}>{t('ops.cancel')}</button>
       </div>
     {:else if !started && mode === 'wslupdate'}
       {#if !upd}
-        <p class="muted">Recherche de la dernière version…</p>
+        <p class="muted">{t('ops.update.searching')}</p>
       {:else}
-        <p>Version installée : <strong>{upd.current ?? 'inconnue'}</strong><br />
-          Dernière version : <strong>{upd.latest ?? 'indisponible (hors ligne ?)'}</strong></p>
-        {#if upd.latest && !upd.newer}<p class="muted">WSL est à jour.</p>{/if}
-        <p class="muted">La mise à jour arrête toutes les distributions et les terminaux ouverts. Windows peut demander une autorisation.</p>
+        <p>{t('ops.update.installed')} <strong>{upd.current ?? t('ops.update.unknown')}</strong><br />
+          {t('ops.update.latest')} <strong>{upd.latest ?? t('ops.update.unavailable')}</strong></p>
+        {#if upd.latest && !upd.newer}<p class="muted">{t('ops.update.upToDate')}</p>{/if}
+        <p class="muted">{t('ops.update.warning')}</p>
       {/if}
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
-        <button class="primary" disabled={!upd} onclick={() => go()}>Mettre à jour</button>
-        <button onclick={onclose}>Annuler</button>
+        <button class="primary" disabled={!upd} onclick={() => go()}>{t('ops.update.go')}</button>
+        <button onclick={onclose}>{t('ops.cancel')}</button>
       </div>
     {:else if !started && mode === 'create'}
       {#if onlineLoading}
-        <p class="muted">Chargement du catalogue…</p>
+        <p class="muted">{t('ops.create.loading')}</p>
       {:else if online.length === 0}
-        {#if error}<div class="error">{error}</div>{/if}
-        <button onclick={loadOnline}>Réessayer</button>
+        {#if error}<div class="error">{bm(error)}</div>{/if}
+        <button onclick={loadOnline}>{t('ops.create.retry')}</button>
       {:else}
-        <ul class="catalog" role="radiogroup" aria-label="Distributions disponibles">
+        <ul class="catalog" role="radiogroup" aria-label={t('ops.create.available')}>
           {#each online as d (d.name)}
             <li>
               <label class="opt"><input type="radio" name="distro" value={d.name} checked={selected === d.name} onchange={() => pickDistro(d.name)} />
@@ -181,60 +180,60 @@
             </li>
           {/each}
         </ul>
-        <p class="muted">Poids du téléchargement : non fourni par WSL (souvent de 300 Mo à 1 Go).</p>
-        <label class="opt"><input type="checkbox" bind:checked={custom} disabled={customReason !== ''} onchange={toggleCustom} /> Choisir le nom et le dossier d'installation</label>
-        {#if customReason}<p class="muted">{customReason}</p>{/if}
+        <p class="muted">{t('ops.create.weight')}</p>
+        <label class="opt"><input type="checkbox" bind:checked={custom} disabled={customReason !== ''} onchange={toggleCustom} /> {t('ops.create.custom')}</label>
+        {#if customReason}<p class="muted">{bm(customReason)}</p>{/if}
         {#if custom}
-          <label>Nom
+          <label>{t('ops.create.name')}
             <input bind:value={name} oninput={suggestDir} />
           </label>
-          <label>Dossier d'installation (vide ou à créer)
-            <span class="pick"><input bind:value={path} /><button type="button" onclick={() => browse('dir')}>Parcourir…</button></span>
+          <label>{t('ops.create.dir')}
+            <span class="pick"><input bind:value={path} /><button type="button" onclick={() => browse('dir')}>{t('ops.browse')}</button></span>
           </label>
         {/if}
-        <p class="muted">Sans choix, WSL utilise le nom du catalogue et son dossier par défaut. L'utilisateur se crée au premier terminal.</p>
-        {#if error}<div class="error">{error}</div>{/if}
+        <p class="muted">{t('ops.create.default')}</p>
+        {#if error}<div class="error">{bm(error)}</div>{/if}
         <div class="foot">
-          <button class="primary" disabled={!selected} onclick={() => go()}>Installer</button>
-          <button onclick={onclose}>Annuler</button>
+          <button class="primary" disabled={!selected} onclick={() => go()}>{t('ops.create.go')}</button>
+          <button onclick={onclose}>{t('ops.cancel')}</button>
         </div>
       {/if}
     {:else if !started}
       {#if mode !== 'export'}
-        <label>Nom de la nouvelle distribution
-          <input bind:value={name} oninput={suggestDir} placeholder="ex. Ubuntu-test" />
+        <label>{t('ops.form.newName')}
+          <input bind:value={name} oninput={suggestDir} placeholder={t('ops.form.namePlaceholder')} />
         </label>
       {/if}
       {#if mode === 'import'}
-        <label>Archive à importer (.tar)
-          <span class="pick"><input bind:value={tar} placeholder="C:\sauvegardes\ubuntu.tar" /><button type="button" onclick={() => browse('tar-open')}>Parcourir…</button></span>
+        <label>{t('ops.form.tarSource')}
+          <span class="pick"><input bind:value={tar} placeholder="C:\sauvegardes\ubuntu.tar" /><button type="button" onclick={() => browse('tar-open')}>{t('ops.browse')}</button></span>
         </label>
       {/if}
-      <label>{mode === 'export' ? 'Fichier d\'export (.tar)' : 'Dossier d\'installation (vide ou à créer)'}
-        <span class="pick"><input bind:value={path} /><button type="button" onclick={() => browse(mode === 'export' ? 'tar-save' : 'dir')}>Parcourir…</button></span>
+      <label>{mode === 'export' ? t('ops.form.exportFile') : t('ops.form.installDir')}
+        <span class="pick"><input bind:value={path} /><button type="button" onclick={() => browse(mode === 'export' ? 'tar-save' : 'dir')}>{t('ops.browse')}</button></span>
       </label>
       {#if mode === 'export'}
-        <p class="muted">Un fichier existant n'est jamais écrasé. L'export peut prendre plusieurs minutes.</p>
+        <p class="muted">{t('ops.form.exportHint')}</p>
       {:else}
-        <p class="muted">Le dossier ne doit pas contenir de fichiers. {mode === 'clone' ? 'Le clone passe par une archive temporaire, supprimée ensuite.' : ''}</p>
+        <p class="muted">{t('ops.form.dirHint')} {mode === 'clone' ? t('ops.form.cloneHint') : ''}</p>
       {/if}
-      {#if error}<div class="error">{error}</div>{/if}
+      {#if error}<div class="error">{bm(error)}</div>{/if}
       <div class="foot">
-        <button class="primary" onclick={() => go()}>{mode === 'export' ? 'Exporter' : mode === 'clone' ? 'Cloner' : 'Importer'}</button>
-        <button onclick={onclose}>Annuler</button>
+        <button class="primary" onclick={() => go()}>{mode === 'export' ? t('ops.form.export') : mode === 'clone' ? t('ops.form.clone') : t('ops.form.import')}</button>
+        <button onclick={onclose}>{t('ops.cancel')}</button>
       </div>
     {:else if status}
       {#if status.active}
-        <p>{status.stage}</p>
+        <p>{bm(status.stage)}</p>
         <progress></progress>
-        {#if status.bytes > 0}<p class="muted">{size(status.bytes)} écrits</p>{/if}
-        <button onclick={() => invoke('op_cancel')}>Annuler l'opération</button>
+        {#if status.bytes > 0}<p class="muted">{t('ops.progress.written', { size: size(status.bytes) })}</p>{/if}
+        <button onclick={() => invoke('op_cancel')}>{t('ops.progress.cancel')}</button>
       {:else if status.error}
-        <div class="error">{status.error}</div>
-        <button onclick={onclose}>Fermer</button>
+        <div class="error">{bm(status.error)}</div>
+        <button onclick={onclose}>{t('ops.close')}</button>
       {:else}
-        <div class="ok">{status.done}</div>
-        <button onclick={onclose}>Fermer</button>
+        <div class="ok">{bm(status.done ?? "")}</div>
+        <button onclick={onclose}>{t('ops.close')}</button>
       {/if}
     {/if}
 </Dialog>

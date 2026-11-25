@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n/index.svelte'
   import { onMount } from 'svelte'
   import { filterCommands, type Command } from './filter'
 
@@ -19,15 +20,15 @@
 </script>
 
 <div class="overlay" role="presentation" onmousedown={(e) => e.target === e.currentTarget && onclose()}>
-  <div class="pal" role="dialog" aria-modal="true" aria-label="Palette de commandes">
-    <input bind:this={input} bind:value={q} onkeydown={key} placeholder="Tape une action ou une distribution…" role="combobox" aria-expanded="true" aria-controls="pal-list" />
+  <div class="pal" role="dialog" aria-modal="true" aria-label={t('shell.palette.title')}>
+    <input bind:this={input} bind:value={q} onkeydown={key} placeholder={t('shell.palette.placeholder')} role="combobox" aria-expanded="true" aria-controls="pal-list" />
     <ul id="pal-list" role="listbox">
       {#each shown as c, i (c.id)}
         <li role="option" aria-selected={i === sel}>
           <button class:sel={i === sel} onclick={() => { onclose(); c.run() }} onmousemove={() => (sel = i)}>{c.label}</button>
         </li>
       {:else}
-        <li class="none">Aucune commande.</li>
+        <li class="none">{t('shell.palette.none')}</li>
       {/each}
     </ul>
   </div>

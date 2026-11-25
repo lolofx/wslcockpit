@@ -7,6 +7,7 @@
   import { isMarkdown } from '../markdown'
   import { groupStatus, statusLabel, breadcrumb, joinRel, type GitFile } from '../project'
   import Button from '../../ui/Button.svelte'
+  import { t } from '../../i18n/index.svelte'
 
   let { block, update, root: viewRoot, open }: BlockContext = $props()
   const own = $derived(parseRoot((block.props as { root?: unknown }).root))
@@ -27,9 +28,9 @@
   const code = (e: unknown) => String(e)
   function explain(e: unknown): string {
     const s = code(e)
-    if (s === 'GIT_NOT_FOUND') return 'git introuvable (installe git dans la distribution, ou git pour Windows).'
-    if (s === 'NOT_REPO') return 'Ce dossier n’est pas un dépôt git.'
-    if (s === 'WSL_ABSENT') return 'WSL est introuvable.'
+    if (s === 'GIT_NOT_FOUND') return t('blocks.error.gitNotFound')
+    if (s === 'NOT_REPO') return t('blocks.error.notRepo')
+    if (s === 'WSL_ABSENT') return t('blocks.error.wslAbsent')
     return s
   }
 
@@ -63,7 +64,7 @@
   async function showDiff(f: GitFile, staged: boolean) {
     try {
       const text = await invoke<string>('git_diff', { root, path: f.path, staged })
-      shown = { title: `${staged ? 'Indexé' : 'Modifié'} · ${f.path}`, text: text || '(aucune différence)' }
+      shown = { title: `${staged ? t('blocks.project.staged') : t('blocks.project.changed')} · ${f.path}`, text: text || t('blocks.project.noDiff') }
     } catch (e) {
       shown = { title: f.path, text: explain(e) }
     }
@@ -77,7 +78,7 @@
       shown = { title: path, text: await invoke<string>('fs_read', { root, rel: path }) }
     } catch (e) {
       const s = code(e)
-      shown = { title: path, text: s === 'BINARY' ? 'Fichier binaire.' : s === 'TOO_BIG' ? 'Fichier trop gros (plus de 1 Mio).' : s }
+      shown = { title: path, text: s === 'BINARY' ? t('blocks.error.binary') : s === 'TOO_BIG' ? t('blocks.error.tooBig') : s }
     }
   }
   const openEntry = (e: Entry) => {
@@ -88,7 +89,7 @@
 
   async function saveRoot(text: string) {
     const r = await invoke<ProjectRoot | null>('project_parse', { text })
-    if (!r) { error = 'Dossier non reconnu : « Distro:/chemin » ou chemin Windows.'; return }
+    if (!r) { error = t('blocks.project.badRoot'); return }
     error = ''
     update({ root: r })
   }
@@ -111,16 +112,17 @@
     return () => window.removeEventListener('focus', on)
   })
 
+  const groupTitle = (g: string) => (g === 'staged' ? t('blocks.project.staged') : g === 'changed' ? t('blocks.project.changed') : t('blocks.project.untracked'))
   const groups = $derived(status ? groupStatus(status.files) : null)
 </script>
 
 {#if !root}
   <div class="empty">
-    <p>Dossier du projet : <code>Debian:/home/moi/projet</code>, un chemin <code>\\wsl.localhost\…</code> ou <code>C:\Dev\projet</code>.</p>
+    <p>{t('blocks.project.rootIntro')} <code>Debian:/home/moi/projet</code>, {t('blocks.project.rootPath')} <code>\\wsl.localhost\…</code> {t('blocks.project.rootOr')} <code>C:\Dev\projet</code>.</p>
     <div class="row">
       <input bind:value={input} placeholder="Debian:/home/moi/projet" onkeydown={(e) => e.key === 'Enter' && void saveRoot(input)} />
-      <Button variant="primary" disabled={!input.trim()} onclick={() => void saveRoot(input)}>Utiliser</Button>
-      <Button onclick={browse}>Parcourir…</Button>
+      <Button variant="primary" disabled={!input.trim()} onclick={() => void saveRoot(input)}>{t('blocks.project.use')}</Button>
+      <Button onclick={browse}>{t('blocks.project.browse')}</Button>
     </div>
     {#if error}<p class="err">{error}</p>{/if}
   </div>
@@ -128,28 +130,28 @@
   <div class="proj">
     <div class="bar">
       <button class="tab" class:on={tab === 'git'} onclick={() => (tab = 'git')}>Git{#if status && status.files.length} ({status.files.length}){/if}</button>
-      <button class="tab" class:on={tab === 'files'} onclick={() => (tab = 'files')}>Fichiers</button>
+      <button class="tab" class:on={tab === 'files'} onclick={() => (tab = 'files')}>{t('blocks.project.files')}</button>
       <span class="grow"></span>
       {#if status}<span class="dim" title={status.upstream ?? ''}>⎇ {status.branch}{#if status.ahead} ↑{status.ahead}{/if}{#if status.behind} ↓{status.behind}{/if}</span>{/if}
-      <Button variant="ghost" onclick={() => void refresh()} disabled={loading} title="Rafraîchir" aria-label="Rafraîchir">⟳</Button>
-      {#if own}<Button variant="ghost" onclick={() => update({ root: undefined })} title="Changer de dossier" aria-label="Changer de dossier">✎</Button>{/if}
+      <Button variant="ghost" onclick={() => void refresh()} disabled={loading} title={t('blocks.project.refresh')} aria-label={t('blocks.project.refresh')}>⟳</Button>
+      {#if own}<Button variant="ghost" onclick={() => update({ root: undefined })} title={t('blocks.project.change')} aria-label={t('blocks.project.change')}>✎</Button>{/if}
     </div>
     <div class="path dim" title="{root.distro ? root.distro + ':' : ''}{root.path}">{root.distro ? root.distro + ':' : ''}{root.path}</div>
     {#if error && (tab === 'files' || !status)}<p class="err">{error}</p>{/if}
     <div class="split">
       <div class="list">
         {#if tab === 'git' && groups}
-          {#each [['Indexé', groups.staged, true], ['Modifié', groups.changed, false], ['Non suivi', groups.untracked, false]] as [title, list, staged] (title)}
+          {#each [['staged', groups.staged, true], ['changed', groups.changed, false], ['untracked', groups.untracked, false]] as [group, list, staged] (group)}
             {#if (list as GitFile[]).length}
-              <h4>{title} ({(list as GitFile[]).length})</h4>
-              {#each list as GitFile[] as f (f.path + title)}
-                <button class="row-f" onclick={() => (title === 'Non suivi' ? void showFile(f.path) : void showDiff(f, staged as boolean))}>
+              <h4>{groupTitle(group as string)} ({(list as GitFile[]).length})</h4>
+              {#each list as GitFile[] as f (f.path + group)}
+                <button class="row-f" onclick={() => (group === 'untracked' ? void showFile(f.path) : void showDiff(f, staged as boolean))}>
                   <b class="st">{statusLabel(f, staged as boolean)}</b><span class="nm">{f.path}</span>
                 </button>
               {/each}
             {/if}
           {/each}
-          {#if status && status.files.length === 0}<p class="dim pad">Rien à valider.</p>{/if}
+          {#if status && status.files.length === 0}<p class="dim pad">{t('blocks.project.clean')}</p>{/if}
         {:else if tab === 'files'}
           <div class="crumbs">
             {#each breadcrumb(rel) as c, i}
@@ -164,7 +166,7 @@
       </div>
       {#if shown}
         <div class="view">
-          <div class="vh"><span>{shown.title}</span><Button variant="ghost" onclick={() => (shown = null)} aria-label="Fermer">✕</Button></div>
+          <div class="vh"><span>{shown.title}</span><Button variant="ghost" onclick={() => (shown = null)} aria-label={t('blocks.project.close')}>✕</Button></div>
           <pre>{shown.text}</pre>
         </div>
       {/if}

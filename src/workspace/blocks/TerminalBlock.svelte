@@ -9,11 +9,12 @@
   import type { BlockContext } from '../registry'
   import { terminalSpec, parseOsc7, parseOsc9, type TerminalProps } from '../terminals'
   import Button from '../../ui/Button.svelte'
+  import { t, bm } from '../../i18n/index.svelte'
 
   let { distro, block, update }: BlockContext = $props()
   const id = block.id // la session vit côté Rust sous cet identifiant, indépendamment de l'affichage
   const p = $derived(block.props as unknown as TerminalProps)
-  const spec = $derived(terminalSpec(distro, p))
+  const spec = $derived(terminalSpec(distro, p, t('workspace.title.profileSuffix')))
   const mode = $derived(p.kind === 'wsl' ? 'wsl' : p.start === 'profile' ? 'profile' : 'distro')
 
   let host: HTMLDivElement
@@ -92,7 +93,7 @@
         return false
       }
       if (k === 'v' && e.shiftKey) {
-        void navigator.clipboard.readText().then((t) => term.paste(t))
+        void navigator.clipboard.readText().then((txt) => term.paste(txt))
         return false
       }
       return true
@@ -139,34 +140,34 @@
   <div class="bar">
     <span class="label" title={spec.program + ' ' + spec.args.join(' ')}>{spec.label}</span>
     <span class="grow"></span>
-    <Button variant="ghost" onclick={() => (settings = !settings)} aria-expanded={settings}>Réglages</Button>
-    <Button variant="ghost" onclick={restart}>Relancer</Button>
+    <Button variant="ghost" onclick={() => (settings = !settings)} aria-expanded={settings}>{t('blocks.terminal.settings')}</Button>
+    <Button variant="ghost" onclick={restart}>{t('blocks.terminal.restart')}</Button>
   </div>
   {#if settings}
     <div class="settings">
-      <label>Type
+      <label>{t('blocks.terminal.type')}
         <select value={mode} onchange={(e) => setMode(e.currentTarget.value)}>
-          <option value="wsl">Shell WSL</option>
-          <option value="distro">PowerShell, disque de la distro</option>
-          <option value="profile">PowerShell, dossier utilisateur</option>
+          <option value="wsl">{t('blocks.terminal.modeWsl')}</option>
+          <option value="distro">{t('blocks.terminal.modeDistro')}</option>
+          <option value="profile">{t('blocks.terminal.modeProfile')}</option>
         </select>
       </label>
       {#if mode === 'distro'}
-        <label>Dossier Linux
+        <label>{t('blocks.terminal.linuxDir')}
           <input value={p.kind === 'powershell' ? p.path ?? '/home' : ''} onchange={(e) => update({ path: e.currentTarget.value, last: undefined })} />
         </label>
       {:else if mode === 'wsl'}
-        <label>Dossier de départ
+        <label>{t('blocks.terminal.startDir')}
           <input value={p.kind === 'wsl' ? p.cwd ?? '' : ''} placeholder="~" onchange={(e) => update({ cwd: e.currentTarget.value, last: undefined })} />
         </label>
       {/if}
-      <p class="hint">Ctrl+clic sur une adresse http(s) l’ouvre dans le navigateur. Dossier courant retenu : {p.last ?? 'aucun'}. Les changements s’appliquent au prochain « Relancer ».</p>
+      <p class="hint">{t('blocks.terminal.hint', { last: p.last ?? t('blocks.terminal.none') })}</p>
     </div>
   {/if}
-  {#if failure}<div class="fail">{failure}</div>{/if}
+  {#if failure}<div class="fail">{bm(failure)}</div>{/if}
   <div class="host" bind:this={host} onpointerdown={() => term.focus()} role="presentation"></div>
   {#if exited}
-    <div class="ended">Processus terminé. <Button onclick={restart}>Relancer</Button></div>
+    <div class="ended">{t('blocks.terminal.ended')} <Button onclick={restart}>{t('blocks.terminal.restart')}</Button></div>
   {/if}
 </div>
 

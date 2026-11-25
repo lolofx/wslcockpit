@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n/index.svelte'
   import { app, display, act, size, stateLabel } from '../state/app.svelte'
   import { distroMenu } from './menus'
   import Button from '../ui/Button.svelte'
@@ -11,16 +12,16 @@
 </script>
 
 {#if !app.loaded}
-  <p class="dim">Chargement…</p>
+  <p class="dim">{t('shell.overview.loading')}</p>
 {:else if app.distros.length === 0}
-  <p class="dim">Aucune distribution installée.</p>
-  <Button variant="primary" onclick={() => (app.ops = { mode: 'create', source: '' })}>Nouvelle distribution</Button>
+  <p class="dim">{t('shell.overview.empty')}</p>
+  <Button variant="primary" onclick={() => (app.ops = { mode: 'create', source: '' })}>{t('shell.overview.create')}</Button>
 {:else}
   <div class="grid">
     {#each app.distros as d (d.name)}
       {@const running = d.state === 'running'}
       <article class="card">
-        <button class="name" onclick={() => open(d.name)} title="Ouvrir l’espace de travail">
+        <button class="name" onclick={() => open(d.name)} title={t('shell.overview.open')}>
           <Icon spec={distroIcon(d.name)} label={display(d.name)} size={26} />
           <span class="dot" class:on={running}></span>
           <strong>{display(d.name)}</strong>
@@ -28,19 +29,19 @@
         <div class="badges">
           <Badge tone={running ? 'success' : 'neutral'}>{stateLabel(d.state)}</Badge>
           <Badge>WSL{d.version}</Badge>
-          {#if d.is_default}<Badge tone="accent">défaut</Badge>{/if}
+          {#if d.is_default}<Badge tone="accent">{t('shell.overview.default')}</Badge>{/if}
         </div>
         <div class="meta dim">
           {#if d.vhdx_bytes !== null}VHDX {size(d.vhdx_bytes)}{/if}
-          {#if app.mon?.disks[d.name]} · Disque {size(app.mon.disks[d.name][0])} / {size(app.mon.disks[d.name][1])}{/if}
+          {#if app.mon?.disks[d.name]} · {t('shell.overview.disk', { used: size(app.mon.disks[d.name][0]), total: size(app.mon.disks[d.name][1]) })}{/if}
         </div>
         <div class="foot">
           {#if running}
-            <Button onclick={() => act('stop', d.name)} disabled={app.busy !== null}>Arrêter</Button>
+            <Button onclick={() => act('stop', d.name)} disabled={app.busy !== null}>{t('shell.overview.stop')}</Button>
           {:else}
-            <Button variant="primary" onclick={() => act('start', d.name)} disabled={app.busy !== null || d.state === 'installing'}>Démarrer</Button>
+            <Button variant="primary" onclick={() => act('start', d.name)} disabled={app.busy !== null || d.state === 'installing'}>{t('shell.overview.start')}</Button>
           {/if}
-          <Menu items={distroMenu(d)} label="Actions de {display(d.name)}" />
+          <Menu items={distroMenu(d)} label={t('shell.top.actionsOf', { name: display(d.name) })} />
         </div>
       </article>
     {/each}

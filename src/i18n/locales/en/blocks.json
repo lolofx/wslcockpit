@@ -1,0 +1,55 @@
+{
+  "error": {
+    "binary": "Binary file.",
+    "tooBig": "File too large (over 1 MiB).",
+    "gitNotFound": "git not found (install git in the distribution, or Git for Windows).",
+    "notRepo": "This folder is not a git repository.",
+    "wslAbsent": "WSL not found."
+  },
+  "log": {
+    "empty": "Nothing to report. Actions and errors show up here."
+  },
+  "state": {
+    "default": "default",
+    "disk": "Disk",
+    "policy": "Policy",
+    "manual": "Manual",
+    "start": "Start on launch",
+    "keepalive": "Keep alive",
+    "notFound": "Distribution not found."
+  },
+  "markdown": {
+    "reload": "Reload",
+    "hint": "Open a .md file from the Project block (Files tab)."
+  },
+  "project": {
+    "staged": "Staged",
+    "changed": "Modified",
+    "untracked": "Untracked",
+    "noDiff": "(no difference)",
+    "badRoot": "Folder not recognized: \"Distro:/path\" or a Windows path.",
+    "rootIntro": "Project folder:",
+    "rootPath": "a path like",
+    "rootOr": "or",
+    "use": "Use",
+    "browse": "Browse…",
+    "files": "Files",
+    "refresh": "Refresh",
+    "change": "Change folder",
+    "clean": "Nothing to commit.",
+    "close": "Close"
+  },
+  "terminal": {
+    "settings": "Settings",
+    "restart": "Restart",
+    "type": "Type",
+    "modeWsl": "WSL shell",
+    "modeDistro": "PowerShell, distro disk",
+    "modeProfile": "PowerShell, user folder",
+    "linuxDir": "Linux folder",
+    "startDir": "Start folder",
+    "none": "none",
+    "hint": "Ctrl+click on an http(s) address opens it in the browser. Remembered current folder: {{last}}. Changes apply on the next \"Restart\".",
+    "ended": "Process ended."
+  }
+}

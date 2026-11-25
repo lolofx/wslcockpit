@@ -1,0 +1,58 @@
+{
+  "language": {
+    "label": "Language",
+    "hint": "Applied immediately and remembered for the next launches."
+  },
+  "tabGlobal": "Global",
+  "back": "Back",
+  "title": "Configuration",
+  "load": "Loading…",
+  "save": "Save",
+  "saved": "Saved.",
+  "fields": {
+    "memory": {
+      "label": "Memory",
+      "hint": "e.g. 8GB (empty = default)"
+    },
+    "processors": {
+      "label": "Processors",
+      "hint": "integer ≥ 1"
+    },
+    "swap": {
+      "label": "Swap",
+      "hint": "e.g. 4GB, 0 = disabled"
+    },
+    "networkingMode": {
+      "label": "Network mode",
+      "hint": ""
+    },
+    "vmIdleTimeout": {
+      "label": "Idle VM shutdown (ms)",
+      "hint": "-1 = never"
+    },
+    "systemd": {
+      "label": "systemd",
+      "hint": ""
+    },
+    "defaultUser": {
+      "label": "Default user",
+      "hint": "letters, digits, _ - ."
+    },
+    "automountEnabled": {
+      "label": "Automount drives",
+      "hint": ""
+    }
+  },
+  "unset": "(not set)",
+  "base": {
+    "label": "Folder for new distributions",
+    "browse": "Browse…",
+    "hint": "Used by create, import and clone: each distro goes in dossier\\nom. Empty = %USERPROFILE%\\WSL."
+  },
+  "globalFile": "The .wslconfig file of your Windows profile. An empty value removes the key.",
+  "distroFile": "The /etc/wsl.conf file of the distribution. An empty value removes the key.",
+  "needStart": "\"{{name}}\" is stopped. To read its wsl.conf, it has to start.",
+  "startRead": "Start and read",
+  "backupNote": "A timestamped backup of the old file is created next to it.",
+  "restart": "Saved. Restart required: run \"Stop all\" (wsl --shutdown) then restart the distributions to apply."
+}

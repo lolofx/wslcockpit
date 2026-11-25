@@ -1,0 +1,104 @@
+{
+  "nav": {
+    "label": "Navigation",
+    "overview": "Overview",
+    "settings": "Settings",
+    "newView": "New view",
+    "closeMenu": "Close menu",
+    "menu": "Menu"
+  },
+  "top": {
+    "stop": "Stop",
+    "start": "Start",
+    "actionsOf": "Actions for {{name}}",
+    "viewActions": "View actions",
+    "globalActions": "General actions",
+    "notifications": "Notifications",
+    "palette": "Command palette (Ctrl+K)"
+  },
+  "global": {
+    "create": "New distribution…",
+    "import": "Import a distribution…",
+    "wslUpdate": "Update WSL…",
+    "settings": "Settings…",
+    "autostartOn": "Start with Windows: yes",
+    "autostartOff": "Start with Windows: no",
+    "shutdownAll": "Stop all…"
+  },
+  "banner": {
+    "update": "New version {{version}} available.",
+    "release": "View release",
+    "wslAbsentTitle": "WSL is not installed or not enabled.",
+    "wslAbsentBefore": "Open PowerShell as administrator and run",
+    "wslAbsentAfter": ", then restart the PC."
+  },
+  "status": {
+    "running": "{{running}}/{{total}} running",
+    "working": "Operation in progress…"
+  },
+  "state": {
+    "running": "Running",
+    "stopped": "Stopped",
+    "installing": "Installing"
+  },
+  "size": {
+    "gb": "{{n}} GB",
+    "mb": "{{n}} MB"
+  },
+  "overview": {
+    "loading": "Loading…",
+    "empty": "No distribution installed.",
+    "create": "New distribution",
+    "open": "Open the workspace",
+    "default": "default",
+    "disk": "Disk {{used}} / {{total}}",
+    "stop": "Stop",
+    "start": "Start"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Type an action or a distribution…",
+    "none": "No command."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "clear": "Clear all"
+  },
+  "float": {
+    "reattach": "Reattach"
+  },
+  "menu": {
+    "terminal": "Terminal",
+    "terminalExternal": "External terminal",
+    "restart": "Restart",
+    "changeIcon": "Change icon…",
+    "editAlias": "Edit alias…",
+    "makeDefault": "Set as default",
+    "export": "Export…",
+    "clone": "Clone…",
+    "convert": "Convert to WSL{{version}}…",
+    "sparse": "Compact (sparse)…",
+    "delete": "Delete…"
+  },
+  "view": {
+    "newTitle": "New view",
+    "newMessage": "A free space to put the blocks of several distributions.",
+    "rename": "Rename…",
+    "nameTitle": "View name",
+    "iconTitle": "Icon of “{{name}}”",
+    "rootWith": "Project folder: {{root}}…",
+    "root": "Project folder…",
+    "rootTitle": "Project folder",
+    "rootMessage": "Debian:/home/me/project, a \\\\wsl.localhost\\… path or C:\\Dev\\project. Empty = none. The view's Project blocks use it.",
+    "rootUnknown": "Folder not recognised: use “Distro:/path” or a Windows path.",
+    "duplicate": "Duplicate",
+    "up": "▲ Move up",
+    "down": "▼ Move down",
+    "delete": "Delete…",
+    "deleteTitle": "Delete the view “{{name}}”?",
+    "deleteMessage": "Its terminals are closed. The distributions are not affected.",
+    "deleteConfirm": "Delete",
+    "defaultName": "View"
+  }
+}

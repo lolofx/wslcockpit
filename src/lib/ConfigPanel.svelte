@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t, bm, lang, setLang } from '../i18n/index.svelte'
+  import { LANGS, type Lang } from '../i18n/core.ts'
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
@@ -7,18 +9,18 @@
   let { distros, onclose, fixed }: { distros: string[]; onclose?: () => void; fixed?: string } = $props();
 
   type FieldDef = { id: string; label: string; hint: string; options?: string[] };
-  const GLOBAL: FieldDef[] = [
-    { id: 'memory', label: 'Mémoire', hint: 'ex. 8GB (vide = défaut)' },
-    { id: 'processors', label: 'Processeurs', hint: 'nombre entier ≥ 1' },
-    { id: 'swap', label: 'Swap', hint: 'ex. 4GB, 0 = désactivé' },
-    { id: 'networkingMode', label: 'Mode réseau', hint: '', options: ['', 'nat', 'mirrored', 'bridged', 'virtioproxy', 'none'] },
-    { id: 'vmIdleTimeout', label: 'Arrêt de la VM inactive (ms)', hint: '-1 = jamais' }
-  ];
-  const DISTRO: FieldDef[] = [
-    { id: 'systemd', label: 'systemd', hint: '', options: ['', 'true', 'false'] },
-    { id: 'defaultUser', label: 'Utilisateur par défaut', hint: 'lettres, chiffres, _ - .' },
-    { id: 'automountEnabled', label: 'Montage automatique des lecteurs', hint: '', options: ['', 'true', 'false'] }
-  ];
+  const GLOBAL = $derived<FieldDef[]>([
+    { id: 'memory', label: t('config.fields.memory.label'), hint: t('config.fields.memory.hint') },
+    { id: 'processors', label: t('config.fields.processors.label'), hint: t('config.fields.processors.hint') },
+    { id: 'swap', label: t('config.fields.swap.label'), hint: t('config.fields.swap.hint') },
+    { id: 'networkingMode', label: t('config.fields.networkingMode.label'), hint: t('config.fields.networkingMode.hint'), options: ['', 'nat', 'mirrored', 'bridged', 'virtioproxy', 'none'] },
+    { id: 'vmIdleTimeout', label: t('config.fields.vmIdleTimeout.label'), hint: t('config.fields.vmIdleTimeout.hint') }
+  ]);
+  const DISTRO = $derived<FieldDef[]>([
+    { id: 'systemd', label: t('config.fields.systemd.label'), hint: t('config.fields.systemd.hint'), options: ['', 'true', 'false'] },
+    { id: 'defaultUser', label: t('config.fields.defaultUser.label'), hint: t('config.fields.defaultUser.hint') },
+    { id: 'automountEnabled', label: t('config.fields.automountEnabled.label'), hint: t('config.fields.automountEnabled.hint'), options: ['', 'true', 'false'] }
+  ]);
 
   let target = $state<string | null>(fixed ?? null); // null = global
   let values = $state<Record<string, string>>({});
@@ -48,8 +50,8 @@
     }
   }
 
-  function pick(t: string | null) {
-    target = t;
+  function pick(tg: string | null) {
+    target = tg;
     load();
   }
 
@@ -73,7 +75,7 @@
   async function saveBase() {
     try {
       base = await invoke<string>('op_set_default_base', { path: base })
-      baseMsg = 'Enregistré.'
+      baseMsg = t('config.saved')
     } catch (e) {
       baseMsg = String(e)
     }
@@ -95,11 +97,11 @@
 <section class="panel">
   {#if fixed === undefined}
     <div class="top">
-      <h2>Configuration</h2>
-      {#if onclose}<button onclick={onclose}>Retour</button>{/if}
+      <h2>{t('config.title')}</h2>
+      {#if onclose}<button onclick={onclose}>{t('config.back')}</button>{/if}
     </div>
     <div class="tabs">
-      <button class:active={target === null} onclick={() => pick(null)}>Global</button>
+      <button class:active={target === null} onclick={() => pick(null)}>{t('config.tabGlobal')}</button>
       {#each distros as d (d)}
         <button class:active={target === d} onclick={() => pick(d)}>{d}</button>
       {/each}
@@ -108,23 +110,30 @@
 
   {#if target === null}
     <div class="row">
-      <span>Dossier des nouvelles distributions</span>
+      <span>{t('config.language.label')}</span>
+      <select value={lang()} onchange={(e) => setLang(e.currentTarget.value as Lang)}>
+        {#each LANGS as l (l.id)}<option value={l.id}>{l.label}</option>{/each}
+      </select>
+      <span class="muted">{t('config.language.hint')}</span>
+    </div>
+    <div class="row">
+      <span>{t('config.base.label')}</span>
       <div class="pick">
         <input bind:value={base} placeholder="C:\\WSL" onchange={saveBase} />
-        <button onclick={browseBase}>Parcourir…</button>
+        <button onclick={browseBase}>{t('config.base.browse')}</button>
       </div>
-      <span class="muted">Utilisé par création, import et clonage : chaque distro va dans <code>dossier\nom</code>. Vide = <code>%USERPROFILE%\WSL</code>.</span>
-      {#if baseMsg}<span class="muted">{baseMsg}</span>{/if}
+      <span class="muted">{t('config.base.hint')}</span>
+      {#if baseMsg}<span class="muted">{bm(baseMsg)}</span>{/if}
     </div>
-    <p class="muted">Fichier <code>.wslconfig</code> de ton profil Windows. Une valeur vide retire la clé.</p>
+    <p class="muted">{t('config.globalFile')}</p>
   {:else}
-    <p class="muted">Fichier <code>/etc/wsl.conf</code> de la distribution. Une valeur vide retire la clé.</p>
+    <p class="muted">{t('config.distroFile')}</p>
   {/if}
 
   {#if needStart}
     <div class="warn">
-      « {target} » est arrêtée. Pour lire son <code>wsl.conf</code>, elle doit démarrer.
-      <button onclick={() => load(true)}>Démarrer et lire</button>
+      {t('config.needStart', { name: target ?? '' })}
+      <button onclick={() => load(true)}>{t('config.startRead')}</button>
     </div>
   {:else if loaded}
     {#each fields as f (f.id)}
@@ -132,27 +141,27 @@
         <span>{f.label}</span>
         {#if f.options}
           <select bind:value={values[f.id]}>
-            {#each f.options as o}<option value={o}>{o === '' ? '(non défini)' : o}</option>{/each}
+            {#each f.options as o}<option value={o}>{o === '' ? t('config.unset') : o}</option>{/each}
           </select>
         {:else}
           <input bind:value={values[f.id]} placeholder={f.hint} class:bad={errors[f.id]} />
         {/if}
-        {#if errors[f.id]}<span class="err">{errors[f.id]}</span>{/if}
+        {#if errors[f.id]}<span class="err">{bm(errors[f.id])}</span>{/if}
       </label>
     {/each}
     <div class="foot">
-      <button class="primary" onclick={save}>Enregistrer</button>
-      <span class="muted">Une sauvegarde horodatée de l'ancien fichier est créée à côté.</span>
+      <button class="primary" onclick={save}>{t('config.save')}</button>
+      <span class="muted">{t('config.backupNote')}</span>
     </div>
     {#if saved}
       <div class="warn">
-        Enregistré. Redémarrage requis : lance « Tout arrêter » (<code>wsl --shutdown</code>) puis relance les distributions pour appliquer.
+        {t('config.restart')}
       </div>
     {/if}
   {:else if !failure}
-    <p class="muted">Chargement…</p>
+    <p class="muted">{t('config.load')}</p>
   {/if}
-  {#if failure}<div class="error">{failure}</div>{/if}
+  {#if failure}<div class="error">{bm(failure)}</div>{/if}
 </section>
 
 <style>

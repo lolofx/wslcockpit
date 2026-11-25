@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n/index.svelte'
   import { invoke } from '@tauri-apps/api/core'
   import { app, display } from '../state/app.svelte'
   import { launchers, saveLauncher, deleteLauncher } from '../state/launchers.svelte'
@@ -33,11 +34,11 @@
 
   async function chooseIcon() {
     if (!edit) return
-    const r = await pickIcon({ title: 'Icône du lanceur', label: edit.name || '?', current: edit.icon ?? null })
+    const r = await pickIcon({ title: t('launchers.icon.title'), label: edit.name || '?', current: edit.icon ?? null })
     if (r !== undefined) edit = { ...edit, icon: r ?? undefined }
   }
   async function remove(l: Launcher) {
-    if (await confirmAction({ title: `Supprimer « ${l.name} » ?`, confirmLabel: 'Supprimer', danger: true })) await deleteLauncher(l.id)
+    if (await confirmAction({ title: t('launchers.removeTitle', { name: l.name }), confirmLabel: t('launchers.delete'), danger: true })) await deleteLauncher(l.id)
   }
   async function submit() {
     if (!edit || !edit.name.trim() || !edit.command.trim()) return
@@ -48,71 +49,71 @@
 
 <section class="panel">
   <div class="top">
-    <h2>Lanceurs</h2>
-    <Button onclick={() => (edit = blank())}>Nouveau lanceur</Button>
+    <h2>{t('launchers.title')}</h2>
+    <Button onclick={() => (edit = blank())}>{t('launchers.new')}</Button>
   </div>
-  <p class="muted">Un lanceur ouvre un terminal qui exécute directement une commande (<code>claude</code>, <code>codex</code>, <code>aspire run</code>…), dans le dossier du projet de l’affichage. Il apparaît dans « + Bloc ».</p>
+  <p class="muted">{t('launchers.intro')}</p>
 
   {#each launchers.doc.launchers as l (l.id)}
     <div class="item">
       <Icon spec={l.icon} label={l.name} size={24} />
       <div class="txt">
         <strong>{l.name}</strong>
-        <span class="muted">{l.target === 'windows' ? 'PowerShell Windows' : l.distro ? display(l.distro) : 'toute distribution'} · <code>{l.command}</code>{l.cwd ? ` · ${l.cwd}` : ''}</span>
+        <span class="muted">{l.target === 'windows' ? t('launchers.targetWindows') : l.distro ? display(l.distro) : t('launchers.anyDistro')} · <code>{l.command}</code>{l.cwd ? ` · ${l.cwd}` : ''}</span>
       </div>
-      <Button variant="ghost" onclick={() => (edit = { ...l })}>Modifier</Button>
-      <Button variant="ghost" onclick={() => void remove(l)}>Supprimer</Button>
+      <Button variant="ghost" onclick={() => (edit = { ...l })}>{t('launchers.edit')}</Button>
+      <Button variant="ghost" onclick={() => void remove(l)}>{t('launchers.delete')}</Button>
     </div>
   {:else}
-    <p class="muted">Aucun lanceur.</p>
+    <p class="muted">{t('launchers.none')}</p>
   {/each}
 
-  <h3>Détecter dans une distribution</h3>
+  <h3>{t('launchers.detect.title')}</h3>
   <div class="row">
-    <select bind:value={detectIn} aria-label="Distribution">
-      <option value="">Choisir…</option>
+    <select bind:value={detectIn} aria-label={t('launchers.detect.distro')}>
+      <option value="">{t('launchers.detect.choose')}</option>
       {#each app.distros as d (d.name)}<option value={d.name}>{display(d.name)}</option>{/each}
     </select>
-    <Button disabled={!detectIn || busy} onclick={() => void detect()}>{busy ? 'Recherche…' : 'Chercher Claude Code, Codex'}</Button>
+    <Button disabled={!detectIn || busy} onclick={() => void detect()}>{busy ? t('launchers.detect.searching') : t('launchers.detect.search')}</Button>
   </div>
-  <p class="muted">La distribution est démarrée si besoin.</p>
+  <p class="muted">{t('launchers.detect.hint')}</p>
   {#if found}
     {#each found as s (s.tool)}
       <div class="item">
-        <div class="txt"><strong>{s.name}</strong><span class="muted">trouvé dans {display(detectIn)}</span></div>
-        <Button variant="primary" onclick={() => void addSuggested(s)}>Ajouter</Button>
+        <div class="txt"><strong>{s.name}</strong><span class="muted">{t('launchers.detect.foundIn', { distro: display(detectIn) })}</span></div>
+        <Button variant="primary" onclick={() => void addSuggested(s)}>{t('launchers.detect.add')}</Button>
       </div>
     {:else}
-      <p class="muted">Rien de nouveau trouvé.</p>
+      <p class="muted">{t('launchers.detect.nothing')}</p>
     {/each}
   {/if}
 </section>
 
 {#if edit}
-  <Dialog title={launchers.doc.launchers.some((x) => x.id === edit!.id) ? 'Modifier le lanceur' : 'Nouveau lanceur'} width={520} onclose={() => (edit = null)}>
+  <Dialog title={launchers.doc.launchers.some((x) => x.id === edit!.id) ? t('launchers.form.editTitle') : t('launchers.form.newTitle')} width={520} onclose={() => (edit = null)}>
     <div class="form">
-      <label>Nom <input bind:value={edit.name} placeholder="Claude Code" /></label>
-      <label>Exécuter dans
+      <label>{t('launchers.form.name')} <input bind:value={edit.name} placeholder="Claude Code" /></label>
+      <label>{t('launchers.form.runIn')}
         <select bind:value={edit.target}>
-          <option value="wsl">Une distribution WSL</option>
-          <option value="windows">PowerShell Windows</option>
+          <option value="wsl">{t('launchers.form.targetWsl')}</option>
+          <option value="windows">{t('launchers.targetWindows')}</option>
         </select>
       </label>
       {#if edit.target === 'wsl'}
-        <label>Distribution
+        <label>{t('launchers.form.distro')}
           <select value={edit.distro ?? ''} onchange={(e) => (edit = { ...edit!, distro: e.currentTarget.value || undefined })}>
-            <option value="">Celle du bloc / à choisir</option>
+            <option value="">{t('launchers.form.distroAny')}</option>
             {#each app.distros as d (d.name)}<option value={d.name}>{display(d.name)}</option>{/each}
           </select>
         </label>
       {/if}
-      <label>Commande <input bind:value={edit.command} placeholder="claude" /></label>
-      <label>Dossier de départ <input value={edit.cwd ?? ''} onchange={(e) => (edit = { ...edit!, cwd: e.currentTarget.value || undefined })} placeholder="vide = dossier du projet de l’affichage" /></label>
-      <div class="ic"><Icon spec={edit.icon} label={edit.name || '?'} size={28} /><Button onclick={() => void chooseIcon()}>Icône…</Button></div>
+      <label>{t('launchers.form.command')} <input bind:value={edit.command} placeholder="claude" /></label>
+      <label>{t('launchers.form.cwd')} <input value={edit.cwd ?? ''} onchange={(e) => (edit = { ...edit!, cwd: e.currentTarget.value || undefined })} placeholder={t('launchers.form.cwdPlaceholder')} /></label>
+      <div class="ic"><Icon spec={edit.icon} label={edit.name || '?'} size={28} /><Button onclick={() => void chooseIcon()}>{t('launchers.icon.button')}</Button></div>
     </div>
     {#snippet footer()}
-      <Button variant="primary" disabled={!edit?.name.trim() || !edit?.command.trim()} onclick={() => void submit()}>Enregistrer</Button>
-      <Button onclick={() => (edit = null)}>Annuler</Button>
+      <Button variant="primary" disabled={!edit?.name.trim() || !edit?.command.trim()} onclick={() => void submit()}>{t('launchers.form.save')}</Button>
+      <Button onclick={() => (edit = null)}>{t('launchers.form.cancel')}</Button>
     {/snippet}
   </Dialog>
 {/if}

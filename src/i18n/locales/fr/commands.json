@@ -1,0 +1,22 @@
+{
+  "overview": "Vue d’ensemble",
+  "settings": "Configuration (wsl.conf, .wslconfig)",
+  "newView": "Nouvel affichage…",
+  "create": "Nouvelle distribution…",
+  "wslUpdate": "Mettre à jour WSL…",
+  "import": "Importer une distribution…",
+  "shutdownAll": "Tout arrêter",
+  "view": "Affichage {{name}}",
+  "goto": "Aller à {{name}}",
+  "stop": "Arrêter {{name}}",
+  "start": "Démarrer {{name}}",
+  "terminal": "Terminal {{name}}",
+  "terminalExternal": "Terminal externe {{name}}",
+  "icon": "Icône de {{name}}…",
+  "alias": "Alias de {{name}}…",
+  "export": "Exporter {{name}}…",
+  "clone": "Cloner {{name}}…",
+  "delete": "Supprimer {{name}}…",
+  "restart": "Redémarrer {{name}}",
+  "makeDefault": "{{name}} : définir par défaut"
+}

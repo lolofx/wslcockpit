@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.svelte'
 // Icônes des distributions : icons.json (Rust), chargées une fois, sauvegardées à chaque choix.
 import { invoke } from '@tauri-apps/api/core'
 import { emptyIcons, guessLogo, parseIcons, setDistroIcon, type IconSpec } from '../icons/model'
@@ -17,7 +18,7 @@ export async function loadIcons() {
 export const distroIcon = (name: string): IconSpec | null => icons.doc.distros[name] ?? null
 
 export async function chooseDistroIcon(name: string, label: string) {
-  const r = await pickIcon({ title: `Icône de « ${label} »`, label, current: distroIcon(name), suggestion: guessLogo(name) })
+  const r = await pickIcon({ title: t('app.icon.title', { label }), label, current: distroIcon(name), suggestion: guessLogo(name) })
   if (r === undefined) return
   icons.doc = setDistroIcon(icons.doc, name, r)
   try {

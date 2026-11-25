@@ -10,13 +10,24 @@ fn show_main(app: &AppHandle) {
     }
 }
 
+fn build_menu(app: &AppHandle, open: &str, quit: &str) -> tauri::Result<Menu<tauri::Wry>> {
+    let open = MenuItem::with_id(app, "open", open, true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", quit, true, None::<&str>)?;
+    Menu::with_items(app, &[&open, &quit])
+}
+
+/// Change les libellés du menu du tray (la langue vient du front).
+pub fn set_labels(app: &AppHandle, open: &str, quit: &str) -> Result<(), String> {
+    let tray = app.tray_by_id("main").ok_or("tray absent")?;
+    let menu = build_menu(app, open, quit).map_err(|e| e.to_string())?;
+    tray.set_menu(Some(menu)).map_err(|e| e.to_string())
+}
+
 /// Icône de zone de notification ; fermer la fenêtre la masque au lieu de quitter.
 pub fn setup(app: &mut App) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Ouvrir WSLCockpit", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &quit])?;
+    let menu = build_menu(app.handle(), "Ouvrir WSLCockpit", "Quitter")?;
 
-    let mut tray = TrayIconBuilder::new()
+    let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("WSLCockpit")
         .menu(&menu)
         .show_menu_on_left_click(false)

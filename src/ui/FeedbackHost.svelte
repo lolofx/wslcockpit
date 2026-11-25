@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from '../i18n/index.svelte'
   import { feedback, dismiss } from './feedback.svelte'
   import Dialog from './Dialog.svelte'
   import Button from './Button.svelte'
@@ -22,15 +23,15 @@
     {#if a.message}<p class="msg">{a.message}</p>{/if}
     {#if a.kind === 'prompt'}
       <form id="ask" onsubmit={(e) => { e.preventDefault(); done(text) }}>
-        <Field label="Valeur" bind:value={text} />
+        <Field label={tr('ui.value')} bind:value={text} />
       </form>
     {/if}
     {#snippet footer()}
-      <Button variant="ghost" onclick={() => done(a.kind === 'confirm' ? false : null)}>Annuler</Button>
+      <Button variant="ghost" onclick={() => done(a.kind === 'confirm' ? false : null)}>{tr('ui.cancel')}</Button>
       {#if a.kind === 'confirm'}
         <Button variant={a.danger ? 'danger' : 'primary'} onclick={() => done(true)}>{a.confirmLabel}</Button>
       {:else}
-        <Button variant="primary" type="submit" form="ask">OK</Button>
+        <Button variant="primary" type="submit" form="ask">{tr('ui.ok')}</Button>
       {/if}
     {/snippet}
   </Dialog>
@@ -40,7 +41,7 @@
   {#each feedback.toasts as t (t.id)}
     <div class="toast {t.tone}" role={t.tone === 'error' ? 'alert' : 'status'}>
       <span>{t.text}</span>
-      <button aria-label="Fermer" onclick={() => dismiss(t.id)}>✕</button>
+      <button aria-label={tr('ui.close')} onclick={() => dismiss(t.id)}>✕</button>
     </div>
   {/each}
 </div>

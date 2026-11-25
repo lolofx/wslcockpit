@@ -14,6 +14,7 @@
   import { layouts, layoutFor, setLayout, saveAsPreset, removePreset, presetLayout } from '../state/layouts.svelte'
   import { promptText, confirmAction } from '../ui/feedback.svelte'
   import Menu from '../ui/Menu.svelte'
+  import { t } from '../i18n/index.svelte'
   import type { MenuItem } from '../shell/menus'
 
   // `space` : clé de la disposition (par défaut la distro) ; dans un affichage, `distro` est vide et chaque bloc porte la sienne.
@@ -48,9 +49,9 @@
     const ids = new Set([...snap.stacks.flatMap((s) => s.blocks), ...(snap.dock ?? [])].filter((b) => b.type === 'terminal').map((b) => b.id))
     untrack(() => {
       if (prevFor === loadedFor) {
-        for (const t of prevTerms) if (!ids.has(t) && !keep.delete(t)) void invoke('pty_close', { id: t }).catch(() => {})
+        for (const k of prevTerms) if (!ids.has(k) && !keep.delete(k)) void invoke('pty_close', { id: k }).catch(() => {})
       }
-      for (const t of ids) keep.delete(t) // rattaché : il redevient un bloc ordinaire
+      for (const k of ids) keep.delete(k) // rattaché : il redevient un bloc ordinaire
       prevTerms = ids
       prevFor = loadedFor
     })
@@ -174,12 +175,12 @@
   const baseTitle = (type: string, props: Record<string, unknown>) => {
     if (type !== 'terminal') return def(type)?.label ?? type
     if (typeof props.title === 'string' && props.title) return props.title
-    return props.kind === 'wsl' ? 'Terminal WSL' : props.start === 'profile' ? 'PowerShell (profil)' : 'PowerShell (disque distro)'
+    return props.kind === 'wsl' ? t('workspace.title.wsl') : props.start === 'profile' ? t('workspace.title.psProfile') : t('workspace.title.psDistro')
   }
   // Dans un affichage, le titre rappelle la distro du bloc.
   const titleOf = (type: string, props: Record<string, unknown>) => {
-    const t = baseTitle(type, props)
-    return inView && typeof props.distro === 'string' && props.distro ? `${t} · ${display(props.distro)}` : t
+    const b = baseTitle(type, props)
+    return inView && typeof props.distro === 'string' && props.distro ? `${b} · ${display(props.distro)}` : b
   }
 
   // Lanceurs : un terminal qui exécute la commande, dans le dossier du projet de l'affichage s'il y en a un.
@@ -188,9 +189,9 @@
       .filter((l) => availableIn(l, inView ? null : distro))
       .flatMap((l) => {
         const targets = l.target === 'windows' ? [''] : l.distro ? [l.distro] : inView ? app.distros.map((x) => x.name) : [distro]
-        return targets.map((t) => ({
-          label: `▶ ${l.name}${l.target === 'wsl' && !l.distro && inView ? ' · ' + display(t) : ''}`,
-          onselect: () => (layout = addBlock(layout, makeBlock('terminal', launchProps(l, t, projectRoot)))),
+        return targets.map((tg) => ({
+          label: `▶ ${l.name}${l.target === 'wsl' && !l.distro && inView ? ' · ' + display(tg) : ''}`,
+          onselect: () => (layout = addBlock(layout, makeBlock('terminal', launchProps(l, tg, projectRoot)))),
         }))
       }),
   )
@@ -203,20 +204,20 @@
     )])
 
   const layoutItems = $derived<MenuItem[]>([
-    { label: 'Enregistrer cette disposition…', onselect: () => void savePresetAsk() },
+    { label: t('workspace.layout.save'), onselect: () => void savePresetAsk() },
     ...Object.keys(layouts.doc.presets).flatMap((n) => [
-      { label: `Appliquer « ${n} »`, onselect: () => { const l = presetLayout(n); if (l) layout = l } },
-      { label: `Supprimer « ${n} »…`, danger: true, onselect: () => void deletePresetAsk(n) },
+      { label: t('workspace.layout.apply', { name: n }), onselect: () => { const l = presetLayout(n); if (l) layout = l } },
+      { label: t('workspace.layout.delete', { name: n }), danger: true, onselect: () => void deletePresetAsk(n) },
     ]),
-    { label: inView ? 'Vider l’affichage' : 'Revenir à la disposition par défaut', onselect: () => (layout = inView ? emptyLayout() : defaultLayout()) },
+    { label: inView ? t('workspace.layout.clear') : t('workspace.layout.reset'), onselect: () => (layout = inView ? emptyLayout() : defaultLayout()) },
   ])
 
   async function savePresetAsk() {
-    const n = await promptText({ title: 'Nom de la disposition', message: 'Elle pourra être appliquée à n’importe quelle distribution.' })
+    const n = await promptText({ title: t('workspace.layout.nameTitle'), message: t('workspace.layout.nameHint') })
     if (n?.trim()) saveAsPreset(n, $state.snapshot(layout))
   }
   async function deletePresetAsk(n: string) {
-    if (await confirmAction({ title: `Supprimer la disposition « ${n} » ?`, confirmLabel: 'Supprimer', danger: true })) removePreset(n)
+    if (await confirmAction({ title: t('workspace.layout.deleteConfirm', { name: n }), confirmLabel: t('workspace.layout.deleteLabel'), danger: true })) removePreset(n)
   }
 
   // Fenêtre flottante : le bloc quitte la disposition et vit dans sa propre fenêtre ; à sa fermeture
@@ -240,19 +241,19 @@
   }
 
   const blockMenu = (b: Block): MenuItem[] => [
-    { label: '◀ Pile précédente', onselect: () => shift(b.id, 'left') },
-    { label: '▶ Pile suivante', onselect: () => shift(b.id, 'right') },
-    { label: '▲ Monter', onselect: () => shift(b.id, 'up') },
-    { label: '▼ Descendre', onselect: () => shift(b.id, 'down') },
-    { label: '⇥ Mettre de côté', onselect: () => (layout = dockBlock(layout, b.id)) },
-    { label: '⧉ Détacher dans une fenêtre', onselect: () => detach(b) },
-    { label: '✕ Fermer', danger: true, onselect: () => (layout = removeBlock(layout, b.id)) },
+    { label: t('workspace.block.prevStack'), onselect: () => shift(b.id, 'left') },
+    { label: t('workspace.block.nextStack'), onselect: () => shift(b.id, 'right') },
+    { label: t('workspace.block.up'), onselect: () => shift(b.id, 'up') },
+    { label: t('workspace.block.down'), onselect: () => shift(b.id, 'down') },
+    { label: t('workspace.block.dock'), onselect: () => (layout = dockBlock(layout, b.id)) },
+    { label: t('workspace.block.detach'), onselect: () => detach(b) },
+    { label: t('workspace.block.close'), danger: true, onselect: () => (layout = removeBlock(layout, b.id)) },
   ]
 </script>
 
 <div class="bar">
-  <Menu items={addItems} label="Ajouter un bloc">{#snippet trigger()}+ Bloc{/snippet}</Menu>
-  <Menu items={layoutItems} label="Dispositions">{#snippet trigger()}Dispositions{/snippet}</Menu>
+  <Menu items={addItems} label={t('workspace.add.label')}>{#snippet trigger()}{t('workspace.add.trigger')}{/snippet}</Menu>
+  <Menu items={layoutItems} label={t('workspace.layout.label')}>{#snippet trigger()}{t('workspace.layout.label')}{/snippet}</Menu>
 </div>
 
 <div class="area">
@@ -270,18 +271,18 @@
         <article class="block" data-block class:dragging={drag?.id === b.id} style:flex="{b.size} 1 0">
           <header role="toolbar" tabindex="-1" onpointerdown={(e) => startDrag(e, b.id)}>
             <span class="t">{titleOf(b.type, b.props)}</span>
-            <Menu items={blockMenu(b)} label="Menu du bloc" />
+            <Menu items={blockMenu(b)} label={t('workspace.block.menu')} />
           </header>
           <div class="body">
             {#if d}
               {@const C = d.component}
               {#if needsDistro(b.type, b.props) && app.loaded && !app.distros.some((x) => x.name === blockDistro(b, distro))}
-                <p class="pad">Distribution « {blockDistro(b, distro) || '?'} » absente.</p>
+                <p class="pad">{t('workspace.block.distroMissing', { name: blockDistro(b, distro) || '?' })}</p>
               {:else}
               <C distro={blockDistro(b, distro)} root={projectRoot} open={openBlock} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
               {/if}
             {:else}
-              <p class="pad">Bloc inconnu « {b.type} ».</p>
+              <p class="pad">{t('workspace.block.unknown', { type: b.type })}</p>
             {/if}
           </div>
         </article>
@@ -289,16 +290,16 @@
     </section>
   {/each}
   {#if layout.stacks.length === 0 && !layout.dock?.length}
-    <p class="empty">Affichage vide. « + Bloc » ajoute un terminal, un journal… de n’importe quelle distribution.</p>
+    <p class="empty">{t('workspace.empty')}</p>
   {/if}
   {#if drag?.ind}
     <div class="ind" style:left="{drag.ind.l}px" style:top="{drag.ind.t}px" style:width="{drag.ind.w}px" style:height="{drag.ind.h}px"></div>
   {/if}
 </div>
 {#if layout.dock?.length}
-  <aside class="dock" aria-label="Blocs mis de côté">
+  <aside class="dock" aria-label={t('workspace.dock.label')}>
     {#each layout.dock as b (b.id)}
-      <button class="dk" title="{titleOf(b.type, b.props)} : remettre" aria-label="Remettre {titleOf(b.type, b.props)}" onclick={() => (layout = undockBlock(layout, b.id))}>
+      <button class="dk" title={t('workspace.dock.restoreTitle', { title: titleOf(b.type, b.props) })} aria-label={t('workspace.dock.restore', { title: titleOf(b.type, b.props) })} onclick={() => (layout = undockBlock(layout, b.id))}>
         <Icon spec={{ kind: 'symbol', value: def(b.type)?.icon ?? 'box' }} size={18} />
       </button>
     {/each}

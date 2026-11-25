@@ -1,0 +1,55 @@
+{
+  "type": {
+    "state": "État",
+    "config": "Configuration",
+    "log": "Journal",
+    "project": "Projet",
+    "markdown": "Aperçu Markdown",
+    "terminal": "Terminal"
+  },
+  "preset": {
+    "project": "Projet : git et fichiers",
+    "psDistro": "PowerShell sur le disque de la distro",
+    "psProfile": "PowerShell dossier utilisateur Windows"
+  },
+  "title": {
+    "wsl": "Terminal WSL",
+    "psProfile": "PowerShell (profil)",
+    "psDistro": "PowerShell (disque distro)",
+    "profileSuffix": "(profil)"
+  },
+  "layout": {
+    "label": "Dispositions",
+    "save": "Enregistrer cette disposition…",
+    "apply": "Appliquer « {{name}} »",
+    "delete": "Supprimer « {{name}} »…",
+    "clear": "Vider l’affichage",
+    "reset": "Revenir à la disposition par défaut",
+    "nameTitle": "Nom de la disposition",
+    "nameHint": "Elle pourra être appliquée à n’importe quelle distribution.",
+    "deleteConfirm": "Supprimer la disposition « {{name}} » ?",
+    "deleteLabel": "Supprimer"
+  },
+  "block": {
+    "prevStack": "◀ Pile précédente",
+    "nextStack": "▶ Pile suivante",
+    "up": "▲ Monter",
+    "down": "▼ Descendre",
+    "dock": "⇥ Mettre de côté",
+    "detach": "⧉ Détacher dans une fenêtre",
+    "close": "✕ Fermer",
+    "menu": "Menu du bloc",
+    "distroMissing": "Distribution « {{name}} » absente.",
+    "unknown": "Bloc inconnu « {{type}} »."
+  },
+  "add": {
+    "label": "Ajouter un bloc",
+    "trigger": "+ Bloc"
+  },
+  "empty": "Affichage vide. « + Bloc » ajoute un terminal, un journal… de n’importe quelle distribution.",
+  "dock": {
+    "label": "Blocs mis de côté",
+    "restoreTitle": "{{title}} : remettre",
+    "restore": "Remettre {{title}}"
+  }
+}

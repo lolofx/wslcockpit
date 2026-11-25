@@ -1,0 +1,55 @@
+{
+  "type": {
+    "state": "Status",
+    "config": "Configuration",
+    "log": "Log",
+    "project": "Project",
+    "markdown": "Markdown preview",
+    "terminal": "Terminal"
+  },
+  "preset": {
+    "project": "Project: git and files",
+    "psDistro": "PowerShell on the distro disk",
+    "psProfile": "PowerShell in the Windows user folder"
+  },
+  "title": {
+    "wsl": "WSL terminal",
+    "psProfile": "PowerShell (profile)",
+    "psDistro": "PowerShell (distro disk)",
+    "profileSuffix": "(profile)"
+  },
+  "layout": {
+    "label": "Layouts",
+    "save": "Save this layout…",
+    "apply": "Apply \"{{name}}\"",
+    "delete": "Delete \"{{name}}\"…",
+    "clear": "Clear the view",
+    "reset": "Restore the default layout",
+    "nameTitle": "Layout name",
+    "nameHint": "It can be applied to any distribution.",
+    "deleteConfirm": "Delete the layout \"{{name}}\"?",
+    "deleteLabel": "Delete"
+  },
+  "block": {
+    "prevStack": "◀ Previous column",
+    "nextStack": "▶ Next column",
+    "up": "▲ Move up",
+    "down": "▼ Move down",
+    "dock": "⇥ Put aside",
+    "detach": "⧉ Detach into a window",
+    "close": "✕ Close",
+    "menu": "Block menu",
+    "distroMissing": "Distribution \"{{name}}\" not found.",
+    "unknown": "Unknown block \"{{type}}\"."
+  },
+  "add": {
+    "label": "Add a block",
+    "trigger": "+ Block"
+  },
+  "empty": "Empty view. \"+ Block\" adds a terminal, a log... from any distribution.",
+  "dock": {
+    "label": "Blocks put aside",
+    "restoreTitle": "{{title}}: restore",
+    "restore": "Restore {{title}}"
+  }
+}

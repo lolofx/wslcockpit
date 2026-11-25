@@ -1,3 +1,4 @@
+import { t, bm } from '../i18n/index.svelte'
 // État partagé de l'application : distros, alias, politiques, monitoring, actions.
 // Tous les écrans et blocs le lisent ; aucun ne fait ses propres appels de liste.
 import { invoke } from '@tauri-apps/api/core'
@@ -55,9 +56,10 @@ export function notify(text: string, tone: Tone = 'info', o: { distro?: string; 
 export const display = (name: string) => app.aliases[name] ?? name
 export const find = (name: string) => app.distros.find((d) => d.name === name)
 
-export const size = (b: number) => (b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} Go` : `${Math.round(b / 1024 ** 2)} Mo`)
+export const size = (b: number) =>
+  b >= 1024 ** 3 ? t('shell.size.gb', { n: (b / 1024 ** 3).toFixed(1) }) : t('shell.size.mb', { n: Math.round(b / 1024 ** 2) })
 export const stateLabel = (s: string) =>
-  s === 'running' ? 'En marche' : s === 'stopped' ? 'Arrêtée' : s === 'installing' ? 'Installation' : s
+  s === 'running' ? t('shell.state.running') : s === 'stopped' ? t('shell.state.stopped') : s === 'installing' ? t('shell.state.installing') : s
 
 export async function refresh() {
   try {
@@ -89,18 +91,19 @@ async function run(name: string, fn: () => Promise<unknown>, after?: () => Promi
     if (after) await after()
   } catch (e) {
     app.error = String(e)
-    notify(String(e), 'error', { distro: name === '*' ? undefined : name })
+    notify(bm(String(e)), 'error', { distro: name === '*' ? undefined : name })
   }
   app.busy = null
   await refresh()
 }
 
 export type Cmd = 'start' | 'stop' | 'restart' | 'terminal'
-const VERB: Record<Cmd, string> = { start: 'démarrée', stop: 'arrêtée', restart: 'redémarrée', terminal: 'terminal ouvert' }
+const verb = (cmd: Cmd, name: string) =>
+  cmd === 'start' ? t('notif.started', { name }) : cmd === 'stop' ? t('notif.stopped', { name }) : cmd === 'restart' ? t('notif.restarted', { name }) : t('notif.terminal', { name })
 export const act = (cmd: Cmd, name: string) =>
   run(name, () => invoke(cmd, { name }), async () => {
     if (cmd === 'start' || cmd === 'restart') await new Promise((r) => setTimeout(r, 1500))
-    notify(`${display(name)} : ${VERB[cmd]}.`, 'success', { distro: name, toast: false })
+    notify(verb(cmd, display(name)), 'success', { distro: name, toast: false })
   })
 
 // Navigation fournie par la coquille (évite un import circulaire).
@@ -128,8 +131,8 @@ export async function setPolicy(name: string, policy: string) {
 
 export async function rename(name: string) {
   const v = await promptText({
-    title: `Alias pour « ${name} »`,
-    message: "Vide = retirer l'alias. Affichage seulement, WSL n'est pas modifié.",
+    title: t('app.alias.title', { name }),
+    message: t('app.alias.message'),
     value: app.aliases[name] ?? '',
   })
   if (v === null) return
@@ -142,9 +145,9 @@ export async function rename(name: string) {
 
 export async function shutdownAll() {
   const running = app.distros.filter((d) => d.state === 'running').map((d) => d.name)
-  const list = running.length ? running.join(', ') : 'aucune distribution en marche'
-  if (!(await confirmAction({ title: 'Tout arrêter ?', message: `wsl --shutdown\n\nEn marche : ${list}`, confirmLabel: 'Tout arrêter', danger: true }))) return
-  await run('*', () => invoke('shutdown'), async () => notify('Toutes les distributions sont arrêtées.', 'success'))
+  const list = running.length ? running.join(', ') : t('app.shutdown.none')
+  if (!(await confirmAction({ title: t('app.shutdown.title'), message: t('app.shutdown.message', { list }), confirmLabel: t('app.shutdown.confirm'), danger: true }))) return
+  await run('*', () => invoke('shutdown'), async () => notify(t('notif.shutdownDone'), 'success'))
 }
 
 export async function toggleAutostart() {
@@ -162,12 +165,12 @@ async function pollOp() {
   try {
     const st = await invoke<OpStatus>('op_status')
     if (opWasActive && !st.active) {
-      if (st.error) notify(st.error, 'error', { system: true })
-      else if (st.done) notify(st.done, 'success', { system: true })
+      if (st.error) notify(bm(st.error), 'error', { system: true })
+      else if (st.done) notify(bm(st.done), 'success', { system: true })
       refresh()
     }
     opWasActive = st.active
-    app.opStage = st.active ? st.stage : null
+    app.opStage = st.active ? bm(st.stage) : null
   } catch {
     /* sans opération : rien à faire */
   }
@@ -188,12 +191,12 @@ export function startApp(light = false): () => void {
   if (!light) { loadLayouts(); loadIcons(); loadLaunchers() }
   refresh()
   pollMonitor()
-  const t = setInterval(() => !app.busy && refresh(), 3000)
+  const tick = setInterval(() => !app.busy && refresh(), 3000)
   const m = setInterval(pollMonitor, 5000)
   if (light) {
     reloadAliases()
     return () => {
-      clearInterval(t)
+      clearInterval(tick)
       clearInterval(m)
     }
   }
@@ -204,16 +207,16 @@ export function startApp(light = false): () => void {
   invoke<{ version: string; url: string } | null>('check_update')
     .then((u) => {
       app.update = u
-      if (u) notify(`Nouvelle version ${u.version} disponible.`, 'info', { toast: false })
+      if (u) notify(t('notif.update', { version: u.version }), 'info', { toast: false })
     })
     .catch(() => {})
   invoke<{ latest: string | null; newer: boolean }>('wsl_update_check')
-    .then((u) => u.newer && notify(`WSL ${u.latest} est disponible (menu général, « Mettre à jour WSL »).`, 'info', { toast: false }))
+    .then((u) => u.newer && notify(t('notif.wslUpdate', { latest: String(u.latest) }), 'info', { toast: false }))
     .catch(() => {})
   const o = setInterval(pollOp, 2000)
   const stopReattach = listenReattach()
   return () => {
-    clearInterval(t)
+    clearInterval(tick)
     clearInterval(m)
     clearInterval(o)
     stopReattach()

@@ -9,7 +9,7 @@ A small, native-feeling desktop app to manage your WSL2 distributions on Windows
 
 Built with Tauri 2, Svelte and Rust. Portable single executable, no installer, no administrator rights, light and dark theme following Windows.
 
-> **Status:** early development. The interface is currently in French only; English and French are planned (see the [roadmap](#roadmap)).
+> **Status:** early development. The interface is available in French and English (Configuration > Global > Language; follows the system language by default).
 
 ## Features
 
@@ -81,7 +81,6 @@ The Windows build is produced by CI (`windows-build` job); the parsers and core 
 
 Planned, in no particular order:
 
-- Multilingual interface (English and French first).
 - Terminal panes inside one block; Windows Terminal split presets.
 - VHDX compaction (needs elevation); in-app update of the portable exe.
 - Quick per-distro menu in the tray.
@@ -89,6 +88,8 @@ Planned, in no particular order:
 ## Contributing
 
 Issues and pull requests are welcome. Before opening a PR, run the checks listed in [Development](#development); the CI runs the same ones. Please keep changes small and focused, and add unit tests for any parsing or validation logic in `crates/wsl-core`.
+
+Translations live in `src/i18n/locales/<lang>/<namespace>.json` (nested keys, `{{var}}` interpolation, `{ "one": "", "other": "" }` plurals with a `count` parameter). `npm run test:ui` checks that `fr` and `en` have the same keys and variables. Messages coming from the Rust backend are matched in `src/i18n/backend.ts`.
 
 ## License
 

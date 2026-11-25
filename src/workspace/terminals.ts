@@ -51,7 +51,8 @@ export function wslUncPath(distro: string, linuxPath: string): string {
   return `\\\\wsl.localhost\\${distro}${p.replace(/\//g, '\\')}`.replace(/\\+$/, '') || `\\\\wsl.localhost\\${distro}`
 }
 
-export function terminalSpec(distro: string, props: TerminalProps): TerminalSpec {
+// `profileText` : libellé affiché quand PowerShell démarre sans dossier (traduit par l'appelant, ce module reste pur).
+export function terminalSpec(distro: string, props: TerminalProps, profileText = '(profile)'): TerminalSpec {
   if (props.kind === 'wsl') {
     const args = ['-d', distro]
     const dir = props.last || props.cwd
@@ -70,7 +71,7 @@ export function terminalSpec(distro: string, props: TerminalProps): TerminalSpec
       program: 'powershell.exe',
       args: ['-NoLogo', '-NoExit', '-EncodedCommand', psEncode(go + PS_TRACK + (props.launch ? `; ${props.launch}` : ''))],
       cwd: null,
-      label: `${props.launch ? props.launch + ' · ' : ''}PowerShell ${dir ?? '(profil)'}`,
+      label: `${props.launch ? props.launch + ' · ' : ''}PowerShell ${dir ?? profileText}`,
       env: [],
     }
   }
