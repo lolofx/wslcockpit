@@ -11,6 +11,8 @@
   import OpsDialog from '../lib/OpsDialog.svelte'
   import DeleteDialog from '../lib/DeleteDialog.svelte'
   import Button from '../ui/Button.svelte'
+  import Icon from '../icons/Icon.svelte'
+  import { distroIcon } from '../state/icons.svelte'
   import Menu from '../ui/Menu.svelte'
   import Badge from '../ui/Badge.svelte'
 
@@ -58,7 +60,7 @@
     <div class="list">
       {#each app.distros as d (d.name)}
         <button class="item" class:on={view === d.name} title={display(d.name)} onclick={() => go(d.name)}>
-          <span class="ic">{display(d.name).slice(0, 2).toUpperCase()}<i class="dot" class:run={d.state === 'running'}></i></span>
+          <span class="ic"><Icon spec={distroIcon(d.name)} label={display(d.name)} size={26} /><i class="dot" class:run={d.state === 'running'}></i></span>
           <span class="lb">{display(d.name)}</span>
         </button>
       {/each}
