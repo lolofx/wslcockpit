@@ -50,6 +50,7 @@
   "dock": {
     "label": "Blocks put aside",
     "restoreTitle": "{{title}}: restore",
+    "dropHint": "Drag a block here to put it aside",
     "restore": "Restore {{title}}"
   }
 }

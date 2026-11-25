@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { parseDoc, savePreset, applyPreset, deletePreset, emptyDoc, defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, parseLayout, findBlock, MAX_STACKS } from './model.ts'
+import { parseDoc, savePreset, applyPreset, deletePreset, emptyDoc, defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, parseLayout, findBlock, MAX_STACKS, newStackSlot, undockTo } from './model.ts'
 import { terminalSpec, wslUncPath, psQuote, psEncode, parseOsc7, parseOsc9, OSC7_PROMPT_COMMAND, PS_TRACK } from './terminals.ts'
 const decodePs = (b64: string) => Buffer.from(b64, 'base64').toString('utf16le')
 
@@ -257,4 +257,37 @@ test('lanceur dans un terminal : script fixe, commande par l\'environnement', ()
   const s = decodePs(p.args[3])
   assert.ok(s.startsWith("Set-Location -LiteralPath 'C:\\Dev'; ") && s.endsWith('; aspire run'))
   assert.ok(terminalSpec('D', { kind: 'wsl' }).args.indexOf('-e') < 0)
+})
+
+test('newStackSlot : bords et milieu entre deux piles', () => {
+  const rects = [{ left: 0, right: 400 }, { left: 406, right: 800 }]
+  assert.equal(newStackSlot(rects, 5, 36), 0)
+  assert.equal(newStackSlot(rects, 403, 36), 1) // au milieu : la 3e pile s'insère entre les deux
+  assert.equal(newStackSlot(rects, 380, 36), 1)
+  assert.equal(newStackSlot(rects, 795, 36), 2)
+  assert.equal(newStackSlot(rects, 200, 36), null)
+  assert.equal(newStackSlot([], 10, 36), null)
+})
+
+test('insérer une 3e pile au milieu', () => {
+  const l = defaultLayout()
+  assert.equal(l.stacks.length, 2)
+  const id = l.stacks[0].blocks[0].id
+  const m = moveBlock(l, id, { kind: 'new-stack', at: 1 })
+  assert.equal(m.stacks.length, 3)
+  assert.equal(m.stacks[1].blocks[0].id, id)
+  assert.equal(m.stacks[0].id, l.stacks[0].id)
+  assert.equal(m.stacks[2].id, l.stacks[1].id)
+})
+
+test('undockTo : du dock vers une place précise', () => {
+  const l = defaultLayout()
+  const id = l.stacks[0].blocks[0].id
+  const d = dockBlock(l, id)
+  assert.equal(findBlock(d, id), null)
+  const m = undockTo(d, id, { kind: 'new-stack', at: 1 })
+  assert.equal(m.stacks.length, 3)
+  assert.equal(m.stacks[1].blocks[0].id, id)
+  assert.equal(m.dock?.length ?? 0, 0)
+  assert.equal(undockTo(l, 'nope', { kind: 'new-stack', at: 0 }), l)
 })
