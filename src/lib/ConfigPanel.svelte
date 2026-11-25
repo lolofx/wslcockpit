@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t, lang, setLang } from '../i18n/index.svelte'
+  import { LANGS, type Lang } from '../i18n/core.ts'
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
@@ -107,6 +109,13 @@
   {/if}
 
   {#if target === null}
+    <div class="row">
+      <span>{t('config.language.label')}</span>
+      <select value={lang()} onchange={(e) => setLang(e.currentTarget.value as Lang)}>
+        {#each LANGS as l (l.id)}<option value={l.id}>{l.label}</option>{/each}
+      </select>
+      <span class="muted">{t('config.language.hint')}</span>
+    </div>
     <div class="row">
       <span>Dossier des nouvelles distributions</span>
       <div class="pick">

@@ -643,6 +643,31 @@ fn op_set_default_base(path: String) -> Result<String, String> {
     Ok(op_default_base())
 }
 
+/// Langue de l'interface enregistrée (app.json, clé `language`) ; vide = suivre le système.
+#[tauri::command]
+fn app_language() -> String {
+    settings::load_file("app.json")
+        .get("language")
+        .cloned()
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+fn app_set_language(lang: String) -> Result<(), String> {
+    if lang != "fr" && lang != "en" {
+        return Err(format!("langue inconnue : {lang}"));
+    }
+    let mut a = settings::load_file("app.json");
+    a.insert("language".into(), lang);
+    settings::save_file("app.json", &a)
+}
+
+/// Libellés du menu du tray, traduits par le front.
+#[tauri::command]
+fn tray_labels(app: tauri::AppHandle, open: String, quit: String) -> Result<(), String> {
+    tray::set_labels(&app, &open, &quit)
+}
+
 #[tauri::command]
 fn op_status(st: State<ops::OpState>) -> ops::Status {
     st.status()
@@ -777,6 +802,9 @@ fn main() {
             config_save,
             op_default_base,
             op_set_default_base,
+            app_language,
+            app_set_language,
+            tray_labels,
             op_status,
             op_cancel,
             op_export,

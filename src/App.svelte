@@ -4,6 +4,7 @@
   import Shell from './shell/Shell.svelte'
   import Float from './shell/Float.svelte'
   import FeedbackHost from './ui/FeedbackHost.svelte'
+  import { initLang } from './i18n/index.svelte'
   import IconPicker from './icons/IconPicker.svelte'
 
   // Fenêtre d'un bloc détaché : l'adresse porte la distro et le bloc (voir Workspace.svelte, detach).
@@ -16,7 +17,10 @@
     }
   })()
 
-  onMount(() => (float ? undefined : startApp()))
+  onMount(() => {
+    initLang()
+    return float ? undefined : startApp()
+  })
 </script>
 
 <FeedbackHost />
