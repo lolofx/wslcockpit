@@ -4,7 +4,7 @@
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
   import {
     defaultLayout, emptyLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, setBlockProps,
-    findBlock, MAX_STACKS, blockDistro, type Layout, type DropTarget, type Block,
+    findBlock, MAX_STACKS, blockDistro, type ProjectRoot, type Layout, type DropTarget, type Block,
   } from './model'
   import { registry, def } from './registry'
   import { app, display } from '../state/app.svelte'
@@ -14,7 +14,7 @@
   import type { MenuItem } from '../shell/menus'
 
   // `space` : clé de la disposition (par défaut la distro) ; dans un affichage, `distro` est vide et chaque bloc porte la sienne.
-  let { distro, space = distro, views: inView = false }: { distro: string; space?: string; views?: boolean } = $props()
+  let { distro, space = distro, views: inView = false, projectRoot }: { distro: string; space?: string; views?: boolean; projectRoot?: ProjectRoot } = $props()
 
   // La disposition vit dans le magasin (layouts.json côté Rust) ; ici une copie de travail réactive.
   let layout = $state<Layout>(defaultLayout())
@@ -161,7 +161,8 @@
     if (p) layout = addBlock(layout, makeBlock(type, { ...p.props, ...(onDistro ? { distro: onDistro } : {}) }))
   }
   // Un bloc a besoin d'une distro, sauf PowerShell sur le profil Windows.
-  const needsDistro = (type: string, props: Record<string, unknown>) => !(type === 'terminal' && props.kind === 'powershell' && props.start === 'profile')
+  const needsDistro = (type: string, props: Record<string, unknown>) =>
+    type !== 'project' && !(type === 'terminal' && props.kind === 'powershell' && props.start === 'profile')
   const baseTitle = (type: string, props: Record<string, unknown>) => {
     if (type !== 'terminal') return def(type)?.label ?? type
     return props.kind === 'wsl' ? 'Terminal WSL' : props.start === 'profile' ? 'PowerShell (profil)' : 'PowerShell (disque distro)'
@@ -256,7 +257,7 @@
               {#if needsDistro(b.type, b.props) && app.loaded && !app.distros.some((x) => x.name === blockDistro(b, distro))}
                 <p class="pad">Distribution « {blockDistro(b, distro) || '?'} » absente.</p>
               {:else}
-              <C distro={blockDistro(b, distro)} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
+              <C distro={blockDistro(b, distro)} root={projectRoot} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
               {/if}
             {:else}
               <p class="pad">Bloc inconnu « {b.type} ».</p>

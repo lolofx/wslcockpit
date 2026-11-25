@@ -32,7 +32,7 @@ export const title = (d: Distro) => display(d.name)
 // --- Affichages
 import { layouts, layoutFor, createView, patchView, deleteView, shiftView, copyView, findView } from '../state/layouts.svelte'
 import { viewKey } from '../workspace/model'
-import { promptText, confirmAction } from '../ui/feedback.svelte'
+import { promptText, confirmAction, toast } from '../ui/feedback.svelte'
 import { pickIcon } from '../icons/picker.svelte'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -59,6 +59,21 @@ export function viewMenu(id: string, go: (v: string) => void): MenuItem[] {
       onselect: async () => {
         const r = await pickIcon({ title: `Icône de « ${v.name} »`, label: v.name, current: v.icon ?? null })
         if (r !== undefined) patchView(id, { icon: r ?? undefined })
+      },
+    },
+    {
+      label: v.root ? `Dossier du projet : ${v.root.distro ? v.root.distro + ':' : ''}${v.root.path}…` : 'Dossier du projet…',
+      onselect: async () => {
+        const t = await promptText({
+          title: 'Dossier du projet',
+          message: 'Debian:/home/moi/projet, un chemin \\\\wsl.localhost\\… ou C:\\Dev\\projet. Vide = aucun. Les blocs Projet de l’affichage l’utilisent.',
+          value: v.root ? (v.root.distro ? `${v.root.distro}:${v.root.path}` : v.root.path) : '',
+        })
+        if (t === null) return
+        if (!t.trim()) return patchView(id, { root: undefined })
+        const r = await invoke<{ distro: string; path: string } | null>('project_parse', { text: t })
+        if (r) patchView(id, { root: r })
+        else toast('Dossier non reconnu : utilise « Distro:/chemin » ou un chemin Windows.', 'error')
       },
     },
     { label: 'Dupliquer', onselect: () => { const c = copyView(id); if (c) go(viewKey(c)) } },

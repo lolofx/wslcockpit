@@ -6,6 +6,7 @@ pub mod config_validate;
 pub mod decode;
 pub mod errors;
 pub mod exec;
+pub mod git;
 pub mod ini;
 pub mod monitor;
 pub mod online;
@@ -26,6 +27,10 @@ pub use errors::{classify_failure, WslError};
 pub use exec::{
     list_distros, open_terminal, powershell, read_lxss, run_checked, set_default, shutdown_all,
     start_distro, start_once, stop_distro, unregister_distro, RawOutput, WslExe, WslRunner,
+};
+pub use git::{
+    git_command, parse_root, parse_status, safe_rel, windows_path, GitFile, GitStatus, Root,
+    STATUS_ARGS,
 };
 pub use ini::Ini;
 pub use monitor::{cpu_percent, parse_df, parse_vm_sample, VmSample, VM_SCRIPT};

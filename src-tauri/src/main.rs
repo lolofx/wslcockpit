@@ -2,6 +2,7 @@
 
 mod autostart;
 mod ops;
+mod project;
 mod pty;
 mod settings;
 mod tray;
@@ -691,6 +692,11 @@ fn main() {
             pty_resize,
             pty_close,
             layouts_load,
+            project::project_parse,
+            project::git_status,
+            project::git_diff,
+            project::fs_list,
+            project::fs_read,
             store_load,
             store_save,
             layouts_save,

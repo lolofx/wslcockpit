@@ -1,11 +1,13 @@
 import type { Component } from 'svelte'
-import type { Block } from './model'
+import type { Block, ProjectRoot } from './model'
 import StateBlock from './blocks/StateBlock.svelte'
 import LogBlock from './blocks/LogBlock.svelte'
 import ConfigBlock from './blocks/ConfigBlock.svelte'
 import TerminalBlock from './blocks/TerminalBlock.svelte'
+import ProjectBlock from './blocks/ProjectBlock.svelte'
 
-export type BlockContext = { distro: string; block: Block; update: (props: Record<string, unknown>) => void }
+// `root` : dossier du projet de l'affichage qui contient le bloc (s'il en a un).
+export type BlockContext = { distro: string; block: Block; update: (props: Record<string, unknown>) => void; root?: ProjectRoot }
 
 // Ajouter un type de bloc = une entrée ici + un composant. Rien d'autre à toucher (layout, glisser, persistance).
 export type BlockDef = {
@@ -19,6 +21,7 @@ export const registry: BlockDef[] = [
   { type: 'state', label: 'État', component: StateBlock, presets: [{ label: 'État', props: {} }] },
   { type: 'config', label: 'Configuration', component: ConfigBlock, presets: [{ label: 'Configuration', props: {} }] },
   { type: 'log', label: 'Journal', component: LogBlock, presets: [{ label: 'Journal', props: {} }] },
+  { type: 'project', label: 'Projet', component: ProjectBlock, presets: [{ label: 'Projet : git et fichiers', props: {} }] },
   {
     type: 'terminal',
     label: 'Terminal',
