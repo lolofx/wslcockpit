@@ -4,6 +4,7 @@
   import { buildCommands } from './commands'
   import { distroMenu, type MenuItem } from './menus'
   import Palette from './Palette.svelte'
+  import Notifications from './Notifications.svelte'
   import Overview from './Overview.svelte'
   import Workspace from '../workspace/Workspace.svelte'
   import ConfigPanel from '../lib/ConfigPanel.svelte'
@@ -16,6 +17,7 @@
   let view = $state('overview') // 'overview' | 'settings' | nom d'une distro
   let drawer = $state(false)
   let palette = $state(false)
+  let bell = $state(false)
 
   const go = (v: string) => { view = v; drawer = false }
   const commands = $derived(buildCommands({ go, current: () => view }))
@@ -80,6 +82,7 @@
         <div class="grow"></div>
         <Menu items={globalMenu} label="Actions générales" />
       {/if}
+      <Button variant="ghost" onclick={() => { bell = true; app.unread = 0 }} title="Notifications" aria-label="Notifications">🔔{#if app.unread > 0}<span class="n">{app.unread > 99 ? '99+' : app.unread}</span>{/if}</Button>
       <Button variant="ghost" onclick={() => (palette = true)} title="Palette de commandes (Ctrl+K)">Ctrl K</Button>
     </header>
 
@@ -110,11 +113,12 @@
     <footer class="status">
       <span>{running}/{app.distros.length} en marche</span>
       {#if app.mon}<span>RAM {size(app.mon.ram_bytes)}{#if app.mon.cpu_percent !== null} · CPU {app.mon.cpu_percent.toFixed(0)} %{/if}</span>{/if}
-      {#if app.busy}<span>Opération en cours…</span>{/if}
+      {#if app.opStage}<span>{app.opStage}</span>{:else if app.busy}<span>Opération en cours…</span>{/if}
     </footer>
   </div>
 </div>
 
+{#if bell}<Notifications onclose={() => (bell = false)} />{/if}
 {#if palette}<Palette {commands} onclose={() => (palette = false)} />{/if}
 
 {#if app.deleting}
@@ -154,6 +158,7 @@
   .scroll { flex: 1; overflow: auto; padding: var(--sp-4); }
   .status { display: flex; gap: var(--sp-4); padding: var(--sp-1) var(--sp-4); border-top: 1px solid var(--border); background: var(--surface-1); font-size: var(--fs-sm); color: var(--text-dim); }
   .scrim { display: none; }
+  .n { margin-left: 2px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: var(--on-danger); font-size: 0.7rem; }
 
   @media (max-width: 700px) {
     .shell { height: 100dvh; }

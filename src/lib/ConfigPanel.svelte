@@ -2,7 +2,8 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
 
-  let { distros, onclose }: { distros: string[]; onclose: () => void } = $props();
+  // `fixed` : distro imposée (bloc d'espace de travail) ; sans lui, onglets Global + distros.
+  let { distros, onclose, fixed }: { distros: string[]; onclose?: () => void; fixed?: string } = $props();
 
   type FieldDef = { id: string; label: string; hint: string; options?: string[] };
   const GLOBAL: FieldDef[] = [
@@ -18,7 +19,7 @@
     { id: 'automountEnabled', label: 'Montage automatique des lecteurs', hint: '', options: ['', 'true', 'false'] }
   ];
 
-  let target = $state<string | null>(null); // null = global
+  let target = $state<string | null>(fixed ?? null); // null = global
   let values = $state<Record<string, string>>({});
   let errors = $state<Record<string, string>>({});
   let message = $state('');
@@ -72,16 +73,18 @@
 </script>
 
 <section class="panel">
-  <div class="top">
-    <h2>Configuration</h2>
-    <button onclick={onclose}>Retour</button>
-  </div>
-  <div class="tabs">
-    <button class:active={target === null} onclick={() => pick(null)}>Global</button>
-    {#each distros as d (d)}
-      <button class:active={target === d} onclick={() => pick(d)}>{d}</button>
-    {/each}
-  </div>
+  {#if fixed === undefined}
+    <div class="top">
+      <h2>Configuration</h2>
+      {#if onclose}<button onclick={onclose}>Retour</button>{/if}
+    </div>
+    <div class="tabs">
+      <button class:active={target === null} onclick={() => pick(null)}>Global</button>
+      {#each distros as d (d)}
+        <button class:active={target === d} onclick={() => pick(d)}>{d}</button>
+      {/each}
+    </div>
+  {/if}
 
   {#if target === null}
     <p class="muted">Fichier <code>.wslconfig</code> de ton profil Windows. Une valeur vide retire la clé.</p>

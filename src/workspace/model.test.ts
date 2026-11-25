@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, parseLayout, findBlock, MAX_STACKS } from './model.ts'
+import { parseDoc, savePreset, applyPreset, deletePreset, emptyDoc, defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, parseLayout, findBlock, MAX_STACKS } from './model.ts'
 import { terminalSpec, wslUncPath } from './terminals.ts'
 
 const sum = (xs: { size: number }[]) => xs.reduce((a, x) => a + x.size, 0)
@@ -68,4 +68,29 @@ test('terminaux : chemin UNC et specs', () => {
   assert.equal(p.program, 'powershell.exe')
   assert.equal(p.cwd, '\\\\wsl.localhost\\Ubuntu\\home\\lolofx')
   assert.equal(terminalSpec('Ubuntu', { kind: 'powershell', start: 'profile' }).cwd, null)
+})
+
+test('document : valeurs invalides retombent sur un document vide', () => {
+  assert.deepEqual(parseDoc(null), emptyDoc())
+  assert.deepEqual(parseDoc({ version: 2 }), emptyDoc())
+  assert.deepEqual(parseDoc('x'), emptyDoc())
+})
+
+test('preset : sauvegarde, application avec nouveaux ids, suppression', () => {
+  const l = defaultLayout()
+  const doc = savePreset(emptyDoc(), '  Dev  ', l)
+  assert.deepEqual(Object.keys(doc.presets), ['Dev'])
+  const a = applyPreset(doc, 'Dev')!
+  const ids = (x: typeof l) => x.stacks.flatMap((s) => [s.id, ...s.blocks.map((b) => b.id)])
+  assert.equal(ids(a).length, ids(l).length)
+  assert.ok(ids(a).every((i) => !ids(l).includes(i)))
+  assert.equal(applyPreset(doc, 'absent'), null)
+  assert.equal(savePreset(doc, '   ', l), doc)
+  assert.deepEqual(deletePreset(doc, 'Dev').presets, {})
+})
+
+test('document : une disposition corrompue est réparée', () => {
+  const d = parseDoc({ version: 1, distros: { U: { version: 9 } }, presets: {} })
+  assert.equal(d.distros.U.version, 1)
+  assert.ok(d.distros.U.stacks.length > 0)
 })
