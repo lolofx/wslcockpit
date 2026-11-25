@@ -69,6 +69,24 @@ export type DropTarget =
   | { kind: 'stack'; stackId: string; index: number }
   | { kind: 'new-stack'; at: number } // position de la nouvelle pile (0 = tout à gauche)
 
+// Cible d'un glisser : une place dans la disposition, ou la barre des blocs en attente.
+export type DragTarget = DropTarget | { kind: 'dock' }
+
+// Où ouvrir une nouvelle pile selon la position x du pointeur : aux deux bords et au milieu de chaque
+// séparation entre piles. `rects` = bords gauche/droit de chaque pile, dans l'ordre. Renvoie `at` ou null.
+export function newStackSlot(rects: { left: number; right: number }[], x: number, edge: number): number | null {
+  if (rects.length === 0) return null
+  const bounds = rects.map((r, i) => (i === 0 ? r.left : (rects[i - 1].right + r.left) / 2))
+  bounds.push(rects[rects.length - 1].right)
+  let best: number | null = null
+  let bestD = Infinity
+  bounds.forEach((b, at) => {
+    const d = Math.abs(x - b)
+    if (d <= edge && d < bestD) { best = at; bestD = d }
+  })
+  return best
+}
+
 export function findBlock(layout: Layout, blockId: string): { stack: number; index: number } | null {
   for (let s = 0; s < layout.stacks.length; s++) {
     const index = layout.stacks[s].blocks.findIndex((b) => b.id === blockId)
@@ -129,6 +147,12 @@ export function undockBlock(layout: Layout, blockId: string): Layout {
   if (!block) return layout
   const without = normalize({ ...layout, stacks: layout.stacks, dock: (layout.dock ?? []).filter((b) => b.id !== blockId) })
   return addBlock(without, block)
+}
+
+// Sort un bloc de la barre d'attente directement vers une place précise.
+export function undockTo(layout: Layout, blockId: string, target: DropTarget): Layout {
+  const back = undockBlock(layout, blockId)
+  return back === layout ? layout : moveBlock(back, blockId, target)
 }
 
 export function setBlockProps(layout: Layout, blockId: string, props: Record<string, unknown>): Layout {

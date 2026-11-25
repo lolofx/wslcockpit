@@ -50,6 +50,7 @@
   "dock": {
     "label": "Blocs mis de côté",
     "restoreTitle": "{{title}} : remettre",
+    "dropHint": "Glisser un bloc ici pour le mettre de côté",
     "restore": "Remettre {{title}}"
   }
 }
