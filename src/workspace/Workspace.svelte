@@ -3,22 +3,24 @@
   import { invoke } from '@tauri-apps/api/core'
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
   import {
-    defaultLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, setBlockProps,
-    findBlock, MAX_STACKS, type Layout, type DropTarget, type Block,
+    defaultLayout, emptyLayout, moveBlock, resizeAt, removeBlock, addBlock, makeBlock, setBlockProps,
+    findBlock, MAX_STACKS, blockDistro, type Layout, type DropTarget, type Block,
   } from './model'
   import { registry, def } from './registry'
+  import { app, display } from '../state/app.svelte'
   import { layouts, layoutFor, setLayout, saveAsPreset, removePreset, presetLayout } from '../state/layouts.svelte'
   import { promptText, confirmAction } from '../ui/feedback.svelte'
   import Menu from '../ui/Menu.svelte'
   import type { MenuItem } from '../shell/menus'
 
-  let { distro }: { distro: string } = $props()
+  // `space` : clé de la disposition (par défaut la distro) ; dans un affichage, `distro` est vide et chaque bloc porte la sienne.
+  let { distro, space = distro, views: inView = false }: { distro: string; space?: string; views?: boolean } = $props()
 
   // La disposition vit dans le magasin (layouts.json côté Rust) ; ici une copie de travail réactive.
   let layout = $state<Layout>(defaultLayout())
   let loadedFor = '' // évite d'écrire la disposition d'une distro dans celle d'une autre
   $effect(() => {
-    const d = distro
+    const d = space
     void layouts.rev
     if (!layouts.loaded) return
     untrack(() => {
@@ -29,7 +31,7 @@
   $effect(() => {
     const snap = $state.snapshot(layout)
     untrack(() => {
-      if (loadedFor === distro) setLayout(distro, snap)
+      if (loadedFor === space) setLayout(space, snap)
     })
   })
 
@@ -154,17 +156,30 @@
     }
   }
 
-  function addPreset(type: string, i: number) {
+  function addPreset(type: string, i: number, onDistro?: string) {
     const p = def(type)?.presets[i]
-    if (p) layout = addBlock(layout, makeBlock(type, { ...p.props }))
+    if (p) layout = addBlock(layout, makeBlock(type, { ...p.props, ...(onDistro ? { distro: onDistro } : {}) }))
   }
-  const titleOf = (type: string, props: Record<string, unknown>) => {
+  // Un bloc a besoin d'une distro, sauf PowerShell sur le profil Windows.
+  const needsDistro = (type: string, props: Record<string, unknown>) => !(type === 'terminal' && props.kind === 'powershell' && props.start === 'profile')
+  const baseTitle = (type: string, props: Record<string, unknown>) => {
     if (type !== 'terminal') return def(type)?.label ?? type
     return props.kind === 'wsl' ? 'Terminal WSL' : props.start === 'profile' ? 'PowerShell (profil)' : 'PowerShell (disque distro)'
   }
+  // Dans un affichage, le titre rappelle la distro du bloc.
+  const titleOf = (type: string, props: Record<string, unknown>) => {
+    const t = baseTitle(type, props)
+    return inView && typeof props.distro === 'string' && props.distro ? `${t} · ${display(props.distro)}` : t
+  }
 
   const addItems = $derived<MenuItem[]>(
-    registry.flatMap((d) => d.presets.map((p, i) => ({ label: p.label, onselect: () => addPreset(d.type, i) }))),
+    registry.flatMap((d) =>
+      d.presets.flatMap((p, i) =>
+        !inView || !needsDistro(d.type, p.props)
+          ? [{ label: p.label, onselect: () => addPreset(d.type, i) }]
+          : app.distros.map((x) => ({ label: `${p.label} · ${display(x.name)}`, onselect: () => addPreset(d.type, i, x.name) })),
+      ),
+    ),
   )
 
   const layoutItems = $derived<MenuItem[]>([
@@ -173,7 +188,7 @@
       { label: `Appliquer « ${n} »`, onselect: () => { const l = presetLayout(n); if (l) layout = l } },
       { label: `Supprimer « ${n} »…`, danger: true, onselect: () => void deletePresetAsk(n) },
     ]),
-    { label: 'Revenir à la disposition par défaut', onselect: () => (layout = defaultLayout()) },
+    { label: inView ? 'Vider l’affichage' : 'Revenir à la disposition par défaut', onselect: () => (layout = inView ? emptyLayout() : defaultLayout()) },
   ])
 
   async function savePresetAsk() {
@@ -187,10 +202,11 @@
   // Fenêtre flottante : le bloc quitte la disposition et vit dans sa propre fenêtre ; à sa fermeture
   // la fenêtre émet « block-reattach » et le bloc revient (voir state/app.svelte.ts).
   function detach(b: Block) {
-    const payload = encodeURIComponent(JSON.stringify({ distro, block: $state.snapshot(b) }))
+    const bd = blockDistro(b, distro)
+    const payload = encodeURIComponent(JSON.stringify({ distro: bd, space, block: $state.snapshot(b) }))
     const w = new WebviewWindow(`float-${b.id}`, {
       url: `index.html?float=${payload}`,
-      title: `${titleOf(b.type, b.props)} · ${distro}`,
+      title: `${baseTitle(b.type, b.props)} · ${bd}`,
       width: 640,
       height: 420,
       minWidth: 320,
@@ -237,7 +253,11 @@
           <div class="body">
             {#if d}
               {@const C = d.component}
-              <C {distro} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
+              {#if needsDistro(b.type, b.props) && app.loaded && !app.distros.some((x) => x.name === blockDistro(b, distro))}
+                <p class="pad">Distribution « {blockDistro(b, distro) || '?'} » absente.</p>
+              {:else}
+              <C distro={blockDistro(b, distro)} block={b} update={(p) => (layout = setBlockProps(layout, b.id, p))} />
+              {/if}
             {:else}
               <p class="pad">Bloc inconnu « {b.type} ».</p>
             {/if}
@@ -246,6 +266,9 @@
       {/each}
     </section>
   {/each}
+  {#if layout.stacks.length === 0}
+    <p class="empty">Affichage vide. « + Bloc » ajoute un terminal, un journal… de n’importe quelle distribution.</p>
+  {/if}
   {#if drag?.ind}
     <div class="ind" style:left="{drag.ind.l}px" style:top="{drag.ind.t}px" style:width="{drag.ind.w}px" style:height="{drag.ind.h}px"></div>
   {/if}
@@ -260,6 +283,8 @@
 
 <style>
   .bar { display: flex; gap: var(--sp-2); padding: var(--sp-1) var(--sp-3); border-bottom: 1px solid var(--border); background: var(--surface-1); }
+  .pad { padding: var(--sp-3); color: var(--text-dim); }
+  .empty { margin: auto; color: var(--text-dim); text-align: center; padding: var(--sp-4); }
   .ws { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; padding: 2px; }
   .stack { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .block { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius); margin: 2px; background: var(--surface-1); }

@@ -10,7 +10,7 @@
   const float = (() => {
     try {
       const raw = new URLSearchParams(location.search).get('float')
-      return raw ? (JSON.parse(raw) as { distro: string; block: import('./workspace/model').Block }) : null
+      return raw ? (JSON.parse(raw) as { distro: string; space?: string; block: import('./workspace/model').Block }) : null
     } catch {
       return null
     }
@@ -21,4 +21,4 @@
 
 <FeedbackHost />
 <IconPicker />
-{#if float}<Float distro={float.distro} block={float.block} />{:else}<Shell />{/if}
+{#if float}<Float distro={float.distro} space={float.space} block={float.block} />{:else}<Shell />{/if}

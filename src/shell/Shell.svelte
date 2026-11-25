@@ -2,7 +2,9 @@
   import { invoke } from '@tauri-apps/api/core'
   import { app, nav, display, find, act, size, stateLabel, toggleAutostart, shutdownAll, refresh, reloadAliases } from '../state/app.svelte'
   import { buildCommands } from './commands'
-  import { distroMenu, type MenuItem } from './menus'
+  import { distroMenu, viewMenu, newView, type MenuItem } from './menus'
+  import { layouts, findView } from '../state/layouts.svelte'
+  import { viewKey } from '../workspace/model'
   import Palette from './Palette.svelte'
   import Notifications from './Notifications.svelte'
   import Overview from './Overview.svelte'
@@ -25,12 +27,13 @@
   nav.go = go
   const commands = $derived(buildCommands({ go, current: () => view }))
   const current = $derived(find(view))
+  const curView = $derived(view.startsWith('view:') ? findView(view.slice(5)) : undefined)
   const absent = $derived(app.error === 'WSL_ABSENT')
   const running = $derived(app.distros.filter((d) => d.state === 'running').length)
 
   // Une distro supprimée ne laisse pas un écran orphelin.
   $effect(() => {
-    if (app.loaded && view !== 'overview' && view !== 'settings' && !current) view = 'overview'
+    if (app.loaded && layouts.loaded && view !== 'overview' && view !== 'settings' && !current && !curView) view = 'overview'
   })
 
   function key(e: KeyboardEvent) {
@@ -65,6 +68,18 @@
         </button>
       {/each}
     </div>
+    <div class="sep"></div>
+    <div class="list views">
+      {#each layouts.doc.views as v (v.id)}
+        <button class="item" class:on={view === viewKey(v.id)} title={v.name} onclick={() => go(viewKey(v.id))}>
+          <span class="ic"><Icon spec={v.icon} label={v.name} size={26} /></span>
+          <span class="lb">{v.name}</span>
+        </button>
+      {/each}
+      <button class="item" title="Nouvel affichage" aria-label="Nouvel affichage" onclick={() => void newView(go)}>
+        <span class="ic plus">+</span><span class="lb">Nouvel affichage</span>
+      </button>
+    </div>
     <button class="item" class:on={view === 'settings'} title="Configuration" onclick={() => go('settings')}>
       <span class="ic">⚙</span><span class="lb">Configuration</span>
     </button>
@@ -84,6 +99,11 @@
           <Button variant="primary" onclick={() => act('start', current.name)} disabled={app.busy !== null}>Démarrer</Button>
         {/if}
         <Menu items={distroMenu(current)} label="Actions de {display(current.name)}" />
+      {:else if curView}
+        <Icon spec={curView.icon} label={curView.name} size={24} />
+        <h1>{curView.name}</h1>
+        <div class="grow"></div>
+        <Menu items={viewMenu(curView.id, go)} label="Actions de l’affichage" />
       {:else}
         <h1>{view === 'settings' ? 'Configuration' : 'Vue d’ensemble'}</h1>
         <div class="grow"></div>
@@ -114,6 +134,8 @@
         <div class="scroll"><ConfigPanel distros={app.distros.map((d) => d.name)} onclose={() => go('overview')} /></div>
       {:else if current}
         <Workspace distro={current.name} />
+      {:else if curView}
+        <Workspace distro="" space={viewKey(curView.id)} views />
       {/if}
     </section>
 
@@ -143,6 +165,8 @@
   .shell { display: flex; height: 100vh; min-width: 0; }
   .rail { flex: none; width: 3.6rem; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); background: var(--surface-1); border-right: 1px solid var(--border); overflow: hidden; }
   .list { flex: 1; display: flex; flex-direction: column; gap: var(--sp-1); overflow-y: auto; overflow-x: hidden; }
+  .list.views { flex: none; max-height: 40%; }
+  .plus { font-size: 1.3rem; color: var(--text-dim); }
   .sep { height: 1px; background: var(--border); margin: var(--sp-1) 0; }
   .item { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text); padding: var(--sp-1); cursor: pointer; font: inherit; text-align: left; }
   .item:hover { background: var(--surface-2); }

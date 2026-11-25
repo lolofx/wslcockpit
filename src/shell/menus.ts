@@ -28,3 +28,51 @@ export function distroMenu(d: Distro): MenuItem[] {
 }
 
 export const title = (d: Distro) => display(d.name)
+
+// --- Affichages
+import { layouts, layoutFor, createView, patchView, deleteView, shiftView, copyView, findView } from '../state/layouts.svelte'
+import { viewKey } from '../workspace/model'
+import { promptText, confirmAction } from '../ui/feedback.svelte'
+import { pickIcon } from '../icons/picker.svelte'
+import { invoke } from '@tauri-apps/api/core'
+
+export async function newView(go: (v: string) => void) {
+  const n = await promptText({ title: 'Nouvel affichage', message: 'Un espace libre où mettre les blocs de plusieurs distributions.', value: '' })
+  if (n === null) return
+  go(viewKey(createView(n)))
+}
+
+export function viewMenu(id: string, go: (v: string) => void): MenuItem[] {
+  const v = findView(id)
+  if (!v) return []
+  const i = layouts.doc.views.findIndex((x) => x.id === id)
+  return [
+    {
+      label: 'Renommer…',
+      onselect: async () => {
+        const n = await promptText({ title: 'Nom de l’affichage', value: v.name })
+        if (n?.trim()) patchView(id, { name: n })
+      },
+    },
+    {
+      label: 'Changer l’icône…',
+      onselect: async () => {
+        const r = await pickIcon({ title: `Icône de « ${v.name} »`, label: v.name, current: v.icon ?? null })
+        if (r !== undefined) patchView(id, { icon: r ?? undefined })
+      },
+    },
+    { label: 'Dupliquer', onselect: () => { const c = copyView(id); if (c) go(viewKey(c)) } },
+    { label: '▲ Monter', onselect: () => shiftView(id, -1), disabled: i <= 0 },
+    { label: '▼ Descendre', onselect: () => shiftView(id, 1), disabled: i >= layouts.doc.views.length - 1 },
+    {
+      label: 'Supprimer…',
+      danger: true,
+      onselect: async () => {
+        if (!(await confirmAction({ title: `Supprimer l’affichage « ${v.name} » ?`, message: 'Ses terminaux sont fermés. Les distributions ne sont pas touchées.', confirmLabel: 'Supprimer', danger: true }))) return
+        for (const s of layoutFor(viewKey(id)).stacks) for (const b of s.blocks) if (b.type === 'terminal') void invoke('pty_close', { id: b.id }).catch(() => {})
+        go('overview')
+        deleteView(id)
+      },
+    },
+  ]
+}
