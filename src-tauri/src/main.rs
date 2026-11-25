@@ -136,9 +136,9 @@ fn allowed_program(p: &str) -> bool {
     )
 }
 
-/// Seule variable que le front peut injecter : le suivi du dossier courant (OSC 7) du shell.
+/// Variables que le front peut injecter : le suivi du dossier courant (OSC 7) et la commande d'un lanceur.
 fn allowed_env(name: &str) -> bool {
-    name == "PROMPT_COMMAND"
+    matches!(name, "PROMPT_COMMAND" | "WSLC_CMD")
 }
 
 #[tauri::command]
@@ -231,7 +231,7 @@ fn layouts_save(doc: serde_json::Value) -> Result<(), String> {
 }
 
 /// Réglages JSON structurés (icônes, lanceurs...) : liste blanche de fichiers, écriture atomique.
-const STORES: [&str; 1] = ["icons.json"];
+const STORES: [&str; 2] = ["icons.json", "launchers.json"];
 
 fn store_name(file: &str) -> Result<&str, String> {
     STORES
@@ -260,6 +260,42 @@ fn store_save(file: String, doc: serde_json::Value) -> Result<(), String> {
     let json = serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?;
     std::fs::write(&tmp, json).map_err(|e| format!("Écriture des réglages impossible : {e}"))?;
     std::fs::rename(&tmp, &p).map_err(|e| format!("Écriture des réglages impossible : {e}"))
+}
+
+/// Outils présents dans la distro (shell de connexion interactif : PATH de nvm, ~/.local/bin...).
+/// Les noms sont validés (lettres, chiffres, - et _) avant d'être substitués dans `command -v`.
+#[tauri::command]
+fn detect_tools(distro: String, names: Vec<String>) -> Vec<String> {
+    names
+        .into_iter()
+        .filter(|n| {
+            !n.is_empty()
+                && n.len() < 40
+                && n.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        })
+        .filter(|n| {
+            let mut cmd = std::process::Command::new("wsl.exe");
+            cmd.args([
+                "-d",
+                &distro,
+                "-e",
+                "sh",
+                "-c",
+                "exec $SHELL -lic \"command -v $0\" >/dev/null 2>&1",
+                n,
+            ]);
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x0800_0000);
+            }
+            cmd.stdin(std::process::Stdio::null())
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+        })
+        .collect()
 }
 
 #[tauri::command]
@@ -719,6 +755,7 @@ fn main() {
             project::fs_list,
             project::fs_read,
             store_load,
+            detect_tools,
             store_save,
             layouts_save,
             aliases,

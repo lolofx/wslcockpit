@@ -127,12 +127,13 @@ impl PtyState {
         }
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
+        let mut wslenv = std::env::var("WSLENV").ok();
         for (k, v) in &spec.env {
             cmd.env(k, v);
-            cmd.env(
-                "WSLENV",
-                wslenv_with(std::env::var("WSLENV").ok().as_deref(), k),
-            );
+            wslenv = Some(wslenv_with(wslenv.as_deref(), k));
+        }
+        if let Some(w) = wslenv.filter(|_| !spec.env.is_empty()) {
+            cmd.env("WSLENV", w);
         }
         let mut child = pair
             .slave

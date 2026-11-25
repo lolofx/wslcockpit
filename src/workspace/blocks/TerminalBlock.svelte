@@ -127,8 +127,8 @@
   })
 
   function setMode(m: string) {
-    if (m === 'wsl') update({ kind: 'wsl', start: undefined, last: undefined })
-    else update({ kind: 'powershell', start: m, last: undefined, path: p.kind === 'powershell' ? p.path ?? '/home' : '/home' })
+    if (m === 'wsl') update({ kind: 'wsl', start: undefined, last: undefined, launch: undefined, title: undefined })
+    else update({ kind: 'powershell', start: m, last: undefined, launch: undefined, title: undefined, path: p.kind === 'powershell' ? p.path ?? '/home' : '/home' })
   }
 </script>
 

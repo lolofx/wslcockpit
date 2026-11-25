@@ -9,6 +9,8 @@
   import { registry, def } from './registry'
   import { app, display } from '../state/app.svelte'
   import Icon from '../icons/Icon.svelte'
+  import { launchers } from '../state/launchers.svelte'
+  import { availableIn, launchProps } from '../launchers/model'
   import { layouts, layoutFor, setLayout, saveAsPreset, removePreset, presetLayout } from '../state/layouts.svelte'
   import { promptText, confirmAction } from '../ui/feedback.svelte'
   import Menu from '../ui/Menu.svelte'
@@ -171,6 +173,7 @@
     type !== 'project' && type !== 'markdown' && !(type === 'terminal' && props.kind === 'powershell' && props.start === 'profile')
   const baseTitle = (type: string, props: Record<string, unknown>) => {
     if (type !== 'terminal') return def(type)?.label ?? type
+    if (typeof props.title === 'string' && props.title) return props.title
     return props.kind === 'wsl' ? 'Terminal WSL' : props.start === 'profile' ? 'PowerShell (profil)' : 'PowerShell (disque distro)'
   }
   // Dans un affichage, le titre rappelle la distro du bloc.
@@ -179,15 +182,25 @@
     return inView && typeof props.distro === 'string' && props.distro ? `${t} · ${display(props.distro)}` : t
   }
 
-  const addItems = $derived<MenuItem[]>(
-    registry.flatMap((d) =>
+  // Lanceurs : un terminal qui exécute la commande, dans le dossier du projet de l'affichage s'il y en a un.
+  const launcherItems = $derived<MenuItem[]>(
+    launchers.doc.launchers
+      .filter((l) => availableIn(l, inView ? null : distro))
+      .flatMap((l) => {
+        const targets = l.target === 'windows' ? [''] : l.distro ? [l.distro] : inView ? app.distros.map((x) => x.name) : [distro]
+        return targets.map((t) => ({
+          label: `▶ ${l.name}${l.target === 'wsl' && !l.distro && inView ? ' · ' + display(t) : ''}`,
+          onselect: () => (layout = addBlock(layout, makeBlock('terminal', launchProps(l, t, projectRoot)))),
+        }))
+      }),
+  )
+  const addItems = $derived<MenuItem[]>([...launcherItems, ...registry.flatMap((d) =>
       d.presets.flatMap((p, i) =>
         !inView || !needsDistro(d.type, p.props)
           ? [{ label: p.label, onselect: () => addPreset(d.type, i) }]
           : app.distros.map((x) => ({ label: `${p.label} · ${display(x.name)}`, onselect: () => addPreset(d.type, i, x.name) })),
       ),
-    ),
-  )
+    )])
 
   const layoutItems = $derived<MenuItem[]>([
     { label: 'Enregistrer cette disposition…', onselect: () => void savePresetAsk() },

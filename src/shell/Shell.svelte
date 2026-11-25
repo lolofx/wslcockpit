@@ -13,6 +13,7 @@
   import OpsDialog from '../lib/OpsDialog.svelte'
   import DeleteDialog from '../lib/DeleteDialog.svelte'
   import Button from '../ui/Button.svelte'
+  import LaunchersPanel from '../lib/LaunchersPanel.svelte'
   import Icon from '../icons/Icon.svelte'
   import { distroIcon } from '../state/icons.svelte'
   import Menu from '../ui/Menu.svelte'
@@ -131,7 +132,7 @@
       {#if view === 'overview'}
         <div class="scroll"><Overview open={go} /></div>
       {:else if view === 'settings'}
-        <div class="scroll"><ConfigPanel distros={app.distros.map((d) => d.name)} onclose={() => go('overview')} /></div>
+        <div class="scroll"><ConfigPanel distros={app.distros.map((d) => d.name)} onclose={() => go('overview')} /><LaunchersPanel /></div>
       {:else if current}
         <Workspace distro={current.name} />
       {:else if curView}
