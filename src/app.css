@@ -7,3 +7,40 @@ body {
   background: var(--bg);
   color: var(--text);
 }
+
+/* Base commune des contrôles sans style propre (écrans de configuration, opérations) : même langage que le reste. */
+button:where(:not([class*='svelte-']), .primary, .active),
+input:where(:not([type='checkbox'], [type='radio'], [type='range'])),
+select {
+  font: inherit;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text);
+}
+button:where(:not([class*='svelte-']), .primary, .active) {
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  transition: background var(--dur), border-color var(--dur), transform var(--dur) var(--ease);
+}
+button:where(:not([class*='svelte-'])):hover:not(:disabled) { background: var(--surface-3); }
+button:where(:not([class*='svelte-']), .primary, .active):active:not(:disabled) { transform: scale(0.97); }
+button:where(:not([class*='svelte-']), .primary, .active):disabled { opacity: 0.5; cursor: default; }
+button:where(:not([class*='svelte-']), .primary, .active):focus-visible { outline: none; box-shadow: var(--focus); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, var(--text)); }
+button.active { background: var(--tint); border-color: var(--accent); color: var(--accent); }
+input:where(:not([type='checkbox'], [type='radio'], [type='range'])),
+select { padding: var(--sp-2) var(--sp-3); transition: border-color var(--dur); }
+input:where(:not([type='checkbox'], [type='radio'], [type='range'])):focus-visible, select:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+input[type='checkbox'], input[type='radio'], progress { accent-color: var(--accent); }
+
+/* Défilement discret et arrondi. */
+* { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
+
+/* Messages : même carte arrondie partout (avertissement, erreur, succès). */
+.warn, .error, .ok { padding: var(--sp-3) var(--sp-4); margin: var(--sp-3) 0; border-radius: var(--radius-lg); border: 1px solid; }
+.warn { background: color-mix(in srgb, var(--warning) 14%, transparent); border-color: var(--warning); }
+.error { background: color-mix(in srgb, var(--danger) 14%, transparent); border-color: var(--danger); white-space: pre-wrap; }
+.ok { background: color-mix(in srgb, var(--success) 14%, transparent); border-color: var(--success); }

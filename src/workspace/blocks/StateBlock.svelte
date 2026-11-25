@@ -37,5 +37,4 @@
   dt { color: var(--text-dim); }
   dd { margin: 0; }
   label { display: grid; gap: var(--sp-1); font-size: var(--fs-sm); color: var(--text-dim); }
-  select { font: inherit; padding: var(--sp-2); border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-1); color: var(--text); }
-</style>
+  </style>

@@ -180,8 +180,9 @@
   .row input { flex: 1; min-width: 0; font: inherit; padding: var(--sp-2); border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-1); color: var(--text); }
   .proj { display: flex; flex-direction: column; height: 100%; min-height: 8rem; font-size: var(--fs-sm); }
   .bar { display: flex; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-2); border-bottom: 1px solid var(--border); }
-  .tab { font: inherit; padding: var(--sp-1) var(--sp-2); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text); cursor: pointer; }
-  .tab.on { border-bottom-color: var(--accent); font-weight: 600; }
+  .tab { font: inherit; padding: var(--sp-1) var(--sp-3); margin: var(--sp-1) 0; border: 0; border-radius: var(--radius); background: none; color: var(--text-dim); cursor: pointer; transition: background var(--dur), color var(--dur); }
+  .tab:hover { background: var(--surface-3); }
+  .tab.on { background: var(--tint); color: var(--accent); font-weight: 600; }
   .grow { flex: 1; }
   .dim { color: var(--text-dim); }
   .path { padding: 0 var(--sp-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; }
@@ -189,13 +190,15 @@
   .list { overflow: auto; flex: 1; min-height: 4rem; }
   h4 { margin: var(--sp-2) var(--sp-3) var(--sp-1); font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; }
   .row-f { display: flex; gap: var(--sp-2); width: 100%; text-align: left; font: inherit; padding: 2px var(--sp-3); border: 0; background: none; color: var(--text); cursor: pointer; }
-  .row-f:hover, .row-f:focus-visible { background: var(--surface-2); outline: none; }
+  .row-f { border-radius: var(--radius-sm); transition: background var(--dur); }
+  .row-f:hover, .row-f:focus-visible { background: var(--tint); outline: none; }
   .st { width: 1.4rem; flex: none; font-family: monospace; color: var(--accent); }
   .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .crumbs { display: flex; gap: var(--sp-1); padding: var(--sp-1) var(--sp-3); flex-wrap: wrap; }
   .lnk { border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; padding: 0; }
   .view { flex: 1; min-height: 6rem; display: flex; flex-direction: column; border-top: 1px solid var(--border); }
   .vh { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--sp-3); background: var(--surface-2); }
+  .view { animation: fade-in 120ms ease; }
   pre { margin: 0; padding: var(--sp-2) var(--sp-3); overflow: auto; flex: 1; font-family: 'Cascadia Mono', Consolas, monospace; font-size: 0.75rem; white-space: pre; }
   .err { margin: var(--sp-2) var(--sp-3); padding: var(--sp-2); background: color-mix(in srgb, var(--danger) 14%, transparent); border-radius: var(--radius); white-space: pre-wrap; }
   .pad { padding: var(--sp-2) var(--sp-3); }
