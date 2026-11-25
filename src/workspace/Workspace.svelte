@@ -279,18 +279,6 @@
 </div>
 
 <div class="area">
-{#if layout.dock?.length || drag?.from === 'stack'}
-  <aside class="dock" class:empty-zone={!layout.dock?.length} class:active={drag?.target?.kind === 'dock'} bind:this={railEl} aria-label={t('workspace.dock.label')} title={layout.dock?.length ? undefined : t('workspace.dock.dropHint')}>
-    {#each layout.dock ?? [] as b (b.id)}
-      <button class="dk" class:dragged={drag?.id === b.id && drag.from === 'dock'} style:transform={drag?.id === b.id && drag.from === 'dock' && dragStart ? `translate(${drag.x - dragStart.x}px, ${drag.y - dragStart.y}px)` : undefined}
-        animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.6 }} out:scale={{ duration: 120, start: 0.6 }} title={t('workspace.dock.restoreTitle', { title: titleOf(b.type, b.props) })} aria-label={t('workspace.dock.restore', { title: titleOf(b.type, b.props) })}
-        onpointerdown={(e) => startDrag(e, b.id, 'dock')} onclick={() => { if (!swallowClick) layout = undockBlock(layout, b.id) }}>
-        <Icon spec={{ kind: 'symbol', value: def(b.type)?.icon ?? 'box' }} size={18} />
-      </button>
-    {/each}
-    {#if !layout.dock?.length}<Icon spec={{ kind: 'symbol', value: 'box' }} size={20} />{/if}
-  </aside>
-{/if}
 <div class="ws" bind:this={root}>
   {#each layout.stacks as stack, si (stack.id)}
     {#if si > 0}
@@ -330,6 +318,16 @@
     <div class="ind" style:left="{drag.ind.l}px" style:top="{drag.ind.t}px" style:width="{drag.ind.w}px" style:height="{drag.ind.h}px"></div>
   {/if}
 </div>
+  <aside class="dock" class:empty-zone={!layout.dock?.length} class:armed={drag?.from === 'stack'} class:active={drag?.target?.kind === 'dock'} bind:this={railEl} aria-label={t('workspace.dock.label')} title={layout.dock?.length ? undefined : t('workspace.dock.dropHint')}>
+    {#each layout.dock ?? [] as b (b.id)}
+      <button class="dk" class:dragged={drag?.id === b.id && drag.from === 'dock'} style:transform={drag?.id === b.id && drag.from === 'dock' && dragStart ? `translate(${drag.x - dragStart.x}px, ${drag.y - dragStart.y}px)` : undefined}
+        animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.6 }} out:scale={{ duration: 120, start: 0.6 }} title={t('workspace.dock.restoreTitle', { title: titleOf(b.type, b.props) })} aria-label={t('workspace.dock.restore', { title: titleOf(b.type, b.props) })}
+        onpointerdown={(e) => startDrag(e, b.id, 'dock')} onclick={() => { if (!swallowClick) layout = undockBlock(layout, b.id) }}>
+        <Icon spec={{ kind: 'symbol', value: def(b.type)?.icon ?? 'box' }} size={18} />
+      </button>
+    {/each}
+    {#if !layout.dock?.length && drag?.from === 'stack'}<Icon spec={{ kind: 'symbol', value: 'box' }} size={20} />{/if}
+  </aside>
 </div>
 
 {#if drag}
@@ -344,8 +342,9 @@
   .pad { padding: var(--sp-3); color: var(--text-dim); }
   .empty { margin: auto; color: var(--text-dim); text-align: center; padding: var(--sp-4); }
   .area { display: flex; flex: 1; min-height: 0; min-width: 0; }
-  .dock { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); width: 2.9rem; box-sizing: border-box; margin: 2px 0 2px 2px; padding: var(--sp-2) 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2); color: var(--text-dim); overflow-y: auto; transition: border-color var(--dur), background var(--dur), color var(--dur); }
-  .dock.empty-zone { justify-content: center; border: 2px dashed var(--border); background: transparent; }
+  .dock { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); width: 2.9rem; box-sizing: border-box; margin: 2px 2px 2px 0; padding: var(--sp-2) 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2); color: var(--text-dim); overflow-y: auto; transition: border-color var(--dur), background var(--dur), color var(--dur); }
+  .dock.empty-zone { justify-content: center; border: 2px dashed transparent; background: transparent; }
+  .dock.empty-zone.armed { border-color: var(--border); }
   .dock.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-2)); }
   .dk { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: none; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--text); cursor: grab; touch-action: none; transition: background var(--dur), border-color var(--dur); }
   .dk:hover, .dk:focus-visible { background: var(--surface-3); border-color: var(--accent); outline: none; }
@@ -365,7 +364,7 @@
   .ghost { position: fixed; z-index: 100; pointer-events: none; padding: var(--sp-2) var(--sp-4); min-width: 9rem; border: 1px solid var(--accent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 22%, var(--surface-1)); opacity: 0.7; font-size: var(--fs-sm); font-weight: 600; box-shadow: var(--shadow); }
   @media (max-width: 700px) {
     .area { flex-direction: column; }
-    .dock { flex-direction: row; width: auto; margin: 2px; padding: 0 var(--sp-2); overflow-x: auto; order: 2; }
+    .dock { flex-direction: row; width: auto; margin: 0 2px 2px; padding: 0 var(--sp-2); overflow-x: auto; min-height: 2.9rem; }
     .ws { flex-direction: column; overflow: auto; }
     .stack { flex: none !important; }
     .block { flex: none !important; min-height: 14rem; }

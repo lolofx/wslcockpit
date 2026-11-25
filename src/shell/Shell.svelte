@@ -59,15 +59,16 @@
 <svelte:window onkeydown={key} />
 
 <div class="shell">
+<div class="body">
   <nav class="rail" class:open={drawer} aria-label={t('shell.nav.label')}>
     <button class="item" class:on={view === 'overview'} title={t('shell.nav.overview')} onclick={() => go('overview')}>
-      <span class="ic">▦</span><span class="lb">{t('shell.nav.overview')}</span>
+      <span class="ic g">▦</span><span class="lb">{t('shell.nav.overview')}</span>
     </button>
     <div class="sep"></div>
     <div class="list">
       {#each app.distros as d (d.name)}
         <button class="item" animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.7 }} class:on={view === d.name} title={display(d.name)} onclick={() => go(d.name)}>
-          <span class="ic"><Icon spec={distroIcon(d.name)} label={display(d.name)} size={26} /><i class="dot" class:run={d.state === 'running'}></i></span>
+          <span class="ic"><Icon spec={distroIcon(d.name)} label={display(d.name)} size={32} /><i class="dot" class:run={d.state === 'running'}></i></span>
           <span class="lb">{display(d.name)}</span>
         </button>
       {/each}
@@ -76,7 +77,7 @@
     <div class="list views">
       {#each layouts.doc.views as v (v.id)}
         <button class="item" animate:flip={{ duration: 150 }} in:scale={{ duration: 150, start: 0.7 }} class:on={view === viewKey(v.id)} title={v.name} onclick={() => go(viewKey(v.id))}>
-          <span class="ic"><Icon spec={v.icon} label={v.name} size={26} /></span>
+          <span class="ic"><Icon spec={v.icon} label={v.name} size={32} /></span>
           <span class="lb">{v.name}</span>
         </button>
       {/each}
@@ -85,7 +86,7 @@
       </button>
     </div>
     <button class="item" class:on={view === 'settings'} title={t('shell.nav.settings')} onclick={() => go('settings')}>
-      <span class="ic">⚙</span><span class="lb">{t('shell.nav.settings')}</span>
+      <span class="ic g">⚙</span><span class="lb">{t('shell.nav.settings')}</span>
     </button>
   </nav>
   {#if drawer}<button class="scrim" aria-label={t('shell.nav.closeMenu')} onclick={() => (drawer = false)}></button>{/if}
@@ -143,12 +144,13 @@
       {/if}
     </section>
 
-    <footer class="status">
-      <span>{t('shell.status.running', { running, total: app.distros.length })}</span>
-      {#if app.mon}<span>RAM {size(app.mon.ram_bytes)}{#if app.mon.cpu_percent !== null} · CPU {app.mon.cpu_percent.toFixed(0)} %{/if}</span>{/if}
-      {#if app.opStage}<span>{app.opStage}</span>{:else if app.busy}<span>{t('shell.status.working')}</span>{/if}
-    </footer>
   </div>
+</div>
+  <footer class="status">
+    <span>{t('shell.status.running', { running, total: app.distros.length })}</span>
+    {#if app.mon}<span>RAM {size(app.mon.ram_bytes)}{#if app.mon.cpu_percent !== null} · CPU {app.mon.cpu_percent.toFixed(0)} %{/if}</span>{/if}
+    {#if app.opStage}<span>{app.opStage}</span>{:else if app.busy}<span>{t('shell.status.working')}</span>{/if}
+  </footer>
 </div>
 
 {#if bell}<Notifications onclose={() => (bell = false)} />{/if}
@@ -166,17 +168,19 @@
 {/if}
 
 <style>
-  .shell { display: flex; height: 100vh; min-width: 0; }
-  .rail { flex: none; width: 3.6rem; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); margin: 2px 0 2px 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .shell { display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+  .body { flex: 1; min-height: 0; display: flex; }
+  .rail { flex: none; width: 4.4rem; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); margin: 2px 0 2px 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
   .list { flex: 1; display: flex; flex-direction: column; gap: var(--sp-1); overflow-y: auto; overflow-x: hidden; }
   .list.views { flex: none; max-height: 40%; }
-  .plus { font-size: 1.3rem; color: var(--text-dim); }
+  .plus { font-size: 1.6rem; color: var(--text-dim); }
   .sep { height: 1px; background: var(--border); margin: var(--sp-1) 0; }
-  .item { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text); padding: var(--sp-1); cursor: pointer; font: inherit; text-align: left; transition: background var(--dur), border-color var(--dur), color var(--dur); }
+  .item { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text); padding: var(--sp-1); cursor: pointer; font: inherit; text-align: left; transition: background var(--dur), border-color var(--dur), color var(--dur); }
   .item:hover { background: var(--surface-3); }
   .item:focus-visible { outline: none; box-shadow: var(--focus); }
   .item.on { background: var(--tint); border-color: var(--accent); color: var(--accent); }
-  .ic { position: relative; flex: none; width: 2.2rem; height: 2.2rem; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 600; }
+  .ic { position: relative; flex: none; width: 2.8rem; height: 2.8rem; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 600; }
+  .ic.g { font-size: 1.7rem; font-weight: 400; }
   .dot { transition: background var(--dur); position: absolute; right: 2px; bottom: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); border: 2px solid var(--surface-2); box-sizing: content-box; }
   .dot.run { background: var(--success); }
   .lb { display: none; font-size: var(--fs-sm); }
@@ -191,7 +195,7 @@
   .lnk { border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
   .content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .scroll { flex: 1; overflow: auto; padding: var(--sp-4); }
-  .status { display: flex; gap: var(--sp-4); padding: var(--sp-1) var(--sp-4); border-top: 1px solid var(--border); background: var(--surface-1); font-size: var(--fs-sm); color: var(--text-dim); }
+  .status { flex: none; display: flex; gap: var(--sp-4); padding: var(--sp-1) var(--sp-4); margin: 0 2px 2px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2); font-size: var(--fs-sm); color: var(--text-dim); }
   .scrim { display: none; }
   .n { margin-left: 2px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: var(--on-danger); font-size: 0.7rem; }
 
@@ -200,6 +204,7 @@
     .rail { position: fixed; z-index: 60; inset: 0 auto 0 0; width: 14rem; transform: translateX(-100%); transition: transform var(--dur); }
     .rail.open { transform: none; box-shadow: var(--shadow); }
     .lb { display: inline; }
+    .item { justify-content: flex-start; }
     .hamb { display: block; }
     .scrim { display: block; position: fixed; inset: 0; z-index: 55; border: 0; background: var(--overlay); }
     .top { padding: var(--sp-2); flex-wrap: wrap; }
